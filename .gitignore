@@ -1,0 +1,26 @@
+# Secrets — never commit these
+.env
+.env.*
+*.env
+*service-account*.json
+*serviceAccount*.json
+*service_account*.json
+firebase-adminsdk*.json
+
+# Dependencies
+node_modules/
+
+# iOS build artifacts
+ios/App/build/
+ios/App/Pods/
+ios/App/output/
+ios/App/App/public/
+ios/DerivedData/
+ios/**/*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
