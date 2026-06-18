@@ -1,15 +1,14 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    ),
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
   });
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 exports.handler = async (event) => {
   // ── 1. Verify Stripe signature ───────────────────────────────────────────
@@ -41,7 +40,7 @@ exports.handler = async (event) => {
   // Mark as processed before doing the work so a crash-and-retry from Stripe
   // doesn't double-process. Use a transaction if atomicity matters more than
   // simplicity — for subscription state it's fine to mark first.
-  await eventRef.set({ processedAt: admin.firestore.FieldValue.serverTimestamp(), type: stripeEvent.type });
+  await eventRef.set({ processedAt: FieldValue.serverTimestamp(), type: stripeEvent.type });
 
   const data = stripeEvent.data.object;
 

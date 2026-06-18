@@ -1,0 +1,13 @@
+{
+  "name": "passion-flow-daily",
+  "version": "1.0.0",
+  "dependencies": {
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
+    "@revenuecat/purchases-capacitor": "^13.1.5",
+    "@revenuecat/purchases-typescript-internal": "^18.12.0",
+    "firebase-admin": "^14.0.0",
+    "stripe": "^14.0.0"
+  }
+}

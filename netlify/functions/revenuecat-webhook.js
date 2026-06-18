@@ -15,18 +15,17 @@
  * Docs: https://www.revenuecat.com/docs/integrations/webhooks
  */
 
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const crypto = require('crypto');
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    ),
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
   });
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Constant-time string comparison to prevent timing attacks.
 // A regular === comparison can leak how many characters matched
@@ -110,7 +109,7 @@ exports.handler = async (event) => {
   }
 
   await eventRef.set({
-    processedAt: admin.firestore.FieldValue.serverTimestamp(),
+    processedAt: FieldValue.serverTimestamp(),
     type: eventType,
     uid,
   });

@@ -10,13 +10,12 @@
  */
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    ),
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
   });
 }
 
@@ -88,7 +87,7 @@ exports.handler = async (event) => {
 
   let decodedToken;
   try {
-    decodedToken = await admin.auth().verifyIdToken(token);
+    decodedToken = await getAuth().verifyIdToken(token);
   } catch {
     return { statusCode: 401, body: 'Invalid or expired token' };
   }
