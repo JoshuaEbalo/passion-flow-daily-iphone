@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Default: deny everything not explicitly matched ──────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ── users/{uid} ──────────────────────────────────────────────────────────
+    match /users/{uid} {
+
+      // Helpers
+      // Fields that only the server (Admin SDK) may write.
+      // The Admin SDK bypasses these rules entirely, so we only need to
+      // block the *client* from touching them.
+      function isEntitlementField(key) {
+        return key in ['isPro', 'subscriptionStatus', 'stripeCustomerId'];
+      }
+
+      function notTouchingEntitlements() {
+        // On update: the diff of incoming vs existing data must not include
+        // any protected field.
+        return !request.resource.data.diff(resource.data)
+                  .affectedKeys()
+                  .hasAny(['isPro', 'subscriptionStatus', 'stripeCustomerId']);
+      }
+
+      function notSettingEntitlements() {
+        // On create: the incoming document must not contain any protected field.
+        return !request.resource.data.keys()
+                  .hasAny(['isPro', 'subscriptionStatus', 'stripeCustomerId']);
+      }
+
+      // Owner can read their own document.
+      allow read: if request.auth != null
+                  && request.auth.uid == uid;
+
+      // Owner can create their own document, but cannot set entitlement fields.
+      // Also enforces that the document belongs to the authenticated user.
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && notSettingEntitlements();
+
+      // Owner can update their own document, but cannot touch entitlement fields.
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && notTouchingEntitlements();
+
+      // Owner can delete their own document (account deletion).
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid;
+    }
+
+    // ── processedEvents / processedRCEvents ──────────────────────────────────
+    // Idempotency tables written only by the Admin SDK (server).
+    // No client access at all.
+    match /processedEvents/{eventId} {
+      allow read, write: if false;
+    }
+    match /processedRCEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+  }
+}
