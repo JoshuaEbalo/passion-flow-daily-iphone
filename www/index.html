@@ -12,6 +12,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="purchases-capacitor.js"></script>
+  <script>window.RCPurchases=RCPurchases;</script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyC038zM-3E0pawUnhPi-V7pprz_Q0DRK10",
@@ -1953,7 +1955,7 @@ function App(){
   var _authError=useState(''),authError=_authError[0],setAuthError=_authError[1];
   var _currentUser=useState(null),currentUser=_currentUser[0],setCurrentUser=_currentUser[1];
   var _userLoaded=useState(false),userLoaded=_userLoaded[0],setUserLoaded=_userLoaded[1];
-  var isNativeApp=!!(window.Capacitor&&window.Capacitor.isNative);
+  var isNativeApp=!!(window.Capacitor&&(window.Capacitor.isNativePlatform?window.Capacitor.isNativePlatform():window.Capacitor.isNative));
   var _rcOff=useState(null),rcOfferings=_rcOff[0],setRcOfferings=_rcOff[1];
   var _purLoad=useState(false),purchaseLoading=_purLoad[0],setPurchaseLoading=_purLoad[1];
   var _purErr=useState(''),purchaseError=_purErr[0],setPurchaseError=_purErr[1];
@@ -1983,7 +1985,7 @@ function App(){
     var unsub=firebase.auth().onAuthStateChanged(function(u){
       setCurrentUser(u);
       if(u){
-        setShowPaywall(false);setShowAuth(false);setShowSplash(false);setShowLanding(false);
+        setShowPaywall(false);setShowAuth(false);setShowOnboard(false);setShowSplash(false);setShowLanding(false);
         window.db.collection('users').doc(u.uid).get().then(function(doc){
           if(doc.exists){
             var d=doc.data();
@@ -2335,7 +2337,10 @@ function App(){
       setSplashFading(true);
       setTimeout(function(){
         setShowSplash(false);
-        if(notLoggedIn){setShowOnboard(true);}
+        if(notLoggedIn){
+          if(localStorage.getItem('pfd_onboarded')){setShowAuth(true);setAuthMode('login');}
+          else{setShowOnboard(true);}
+        }
       },650);
     }
     var unsub=firebase.auth().onAuthStateChanged(function(u){
@@ -5055,13 +5060,13 @@ function App(){
             </div>
           </div>
 
-          <button onClick={function(){setShowPaywall(true);}} className="ob-fade-up font-sans text-[14px] font-semibold text-white px-10 py-3.5 rounded-full active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Start my daily flow</button>
+          <button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowPaywall(true);}} className="ob-fade-up font-sans text-[14px] font-semibold text-white px-10 py-3.5 rounded-full active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Start my daily flow</button>
         </div>}
 
       </div>
 
       {/* Skip */}
-      {obStep<10&&<button onClick={function(){setShowPaywall(true);}} className="fixed top-8 right-6 font-sans text-[11px] text-body opacity-30 hover:opacity-60">skip</button>}
+      {obStep<10&&<button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowPaywall(true);}} className="fixed top-8 right-6 font-sans text-[11px] text-body opacity-30 hover:opacity-60">skip</button>}
     </div>}
 
     {/* Paywall */}
@@ -5117,30 +5122,29 @@ function App(){
           {/* CTA */}
           <button onClick={function(){
             setPurchaseError('');
-            if(isNativeApp&&window.RCPurchases&&rcOfferings&&rcOfferings.current){
+            if(isNativeApp){
+              // Native: must use Apple IAP via RevenueCat — never Stripe
+              if(!window.RCPurchases){setPurchaseError('Store not available. Please try again.');return;}
               var Purchases=window.RCPurchases.Purchases;
+              if(!rcOfferings||!rcOfferings.current){setPurchaseError('Loading products… please wait a moment and try again.');return;}
               var pkg=pricePlan==='yearly'?rcOfferings.current.annual:rcOfferings.current.monthly;
               if(!pkg&&rcOfferings.current.availablePackages){pkg=rcOfferings.current.availablePackages.find(function(p){return pricePlan==='yearly'?p.packageType==='ANNUAL':p.packageType==='MONTHLY';});}
-              if(pkg){
-                setPurchaseLoading(true);
-                Purchases.purchasePackage({aPackage:pkg}).then(function(){
-                  setPurchaseLoading(false);
-                  setShowPaywall(false);setShowOnboard(false);setShowAuth(true);setAuthMode('signup');
-                }).catch(function(e){
-                  setPurchaseLoading(false);
-                  if(!e.userCancelled)setPurchaseError(e.message||'Something went wrong. Please try again.');
-                });
-                return;
-              }
-            }
-            if(!isNativeApp){
-              var uid=currentUser?currentUser.uid:'';
-              var email=currentUser?currentUser.email:'';
-              var base=pricePlan==='yearly'?'https://buy.stripe.com/eVq8wP9MF5wcgOBfQwbo407':'https://buy.stripe.com/eVq6oHf6Ze2I0PD5bSbo406';
-              window.location.href=base+'?client_reference_id='+uid+(email?'&prefilled_email='+encodeURIComponent(email):'');
+              if(!pkg){setPurchaseError('Product not found. Please try again.');return;}
+              setPurchaseLoading(true);
+              Purchases.purchasePackage({aPackage:pkg}).then(function(){
+                setPurchaseLoading(false);
+                setShowPaywall(false);setShowOnboard(false);setShowAuth(true);setAuthMode('signup');
+              }).catch(function(e){
+                setPurchaseLoading(false);
+                if(!e.userCancelled)setPurchaseError(e.message||'Something went wrong. Please try again.');
+              });
               return;
             }
-            setShowPaywall(false);setShowOnboard(false);setShowAuth(true);setAuthMode('signup');
+            // Web only: Stripe checkout
+            var uid=currentUser?currentUser.uid:'';
+            var email=currentUser?currentUser.email:'';
+            var base=pricePlan==='yearly'?'https://buy.stripe.com/eVq8wP9MF5wcgOBfQwbo407':'https://buy.stripe.com/eVq6oHf6Ze2I0PD5bSbo406';
+            window.location.href=base+'?client_reference_id='+uid+(email?'&prefilled_email='+encodeURIComponent(email):'');
           }} disabled={purchaseLoading} className="w-full font-sans text-[15px] md:text-[16px] font-bold text-white py-4 rounded-full active:scale-[0.98] transition-all"
             style={{background:purchaseLoading?'rgba(196,154,122,0.6)':'#C49A7A',boxShadow:'0 6px 20px rgba(196,154,122,0.35)'}}>
             {purchaseLoading?'Processing...':'Start my 3-day free trial'}
@@ -5298,10 +5302,10 @@ function App(){
           continue with apple
         </button>
 
-        <button onClick={function(){var p=new firebase.auth.GoogleAuthProvider();firebase.auth().signInWithPopup(p).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){setAuthError(e.message||'google sign-in failed');});}} className="w-full font-sans text-[14px] font-semibold text-headline bg-white py-3.5 mb-5 rounded-full flex items-center justify-center gap-2 border border-black/5 active:scale-[0.98]">
+        {!isNativeApp&&<button onClick={function(){var p=new firebase.auth.GoogleAuthProvider();firebase.auth().signInWithPopup(p).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){setAuthError(e.message||'google sign-in failed');});}} className="w-full font-sans text-[14px] font-semibold text-headline bg-white py-3.5 mb-5 rounded-full flex items-center justify-center gap-2 border border-black/5 active:scale-[0.98]">
           <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.2 5.2C40.9 35.6 44 30.3 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
           continue with google
-        </button>
+        </button>}
 
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 h-px bg-black/10"></div>
