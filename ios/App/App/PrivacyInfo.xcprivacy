@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+    <!-- ─── Tracking ────────────────────────────────────────────────────── -->
+    <!-- The app does not use data for cross-app/cross-site tracking -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <!-- ─── Required Reason APIs ────────────────────────────────────────── -->
+    <!--
+        Audited from codebase (2026-07-09):
+
+        1. UserDefaults / localStorage
+           - Capacitor stores plugin configuration in NSUserDefaults
+           - RevenueCat caches subscriber/entitlement data in NSUserDefaults
+           - WKWebView localStorage used for offline backup (pfd_backup_<uid>)
+           Reason CA92.1: Read/write by app itself for its own functionality
+
+        2. File timestamps
+           - Capacitor reads modification timestamps of bundled web assets
+             (ios/App/App/public/) to decide whether to reload the WebView
+           - RevenueCat reads timestamps of its on-disk receipt cache
+           Reason C617.1: Access timestamps of files inside the app container
+
+        3. System boot time
+           - RevenueCat SDK uses ProcessInfo.systemUptime internally to
+             implement exponential back-off on network retries
+           - Firebase SDK uses it to calculate session duration
+           Reason 35F9.1: Only to calculate elapsed time (not used to
+           fingerprint device or correlate with other apps)
+    -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- App reads/writes its own data — plugin config, subscription
+                     entitlement cache, and offline backup timestamp -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- Capacitor and RevenueCat access file timestamps inside
+                     the app's own container only -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- Used solely to measure elapsed time for network retry
+                     back-off in RevenueCat and Firebase SDKs -->
+                <string>35F9.1</string>
+            </array>
+        </dict>
+
+    </array>
+
+    <!-- ─── Collected Data Types ─────────────────────────────────────────── -->
+    <!--
+        All data is collected solely for app functionality.
+        None is used for tracking or sold to third parties.
+    -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+
+        <!-- Email address — collected via Firebase Auth for account creation
+             and login. Linked to user identity. Not used for tracking. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Name — optionally provided during sign-up or via Apple/Google
+             identity. Displayed in app UI. Linked to user identity. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeName</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- User content — journal entries, voice memo transcripts,
+             daily reflections, and saved ideas created by the user.
+             Stored in Firestore under the user's own UID. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Purchase history — subscription status and expiry managed by
+             RevenueCat and stored in Firestore (isPro, subscriptionStatus).
+             Used only to gate Pro features. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Device ID — Firebase installation ID generated per device.
+             Used to associate the device with the user's Firebase account
+             for push notifications and session management. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeDeviceID</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+    </array>
+
+</dict>
+</plist>
