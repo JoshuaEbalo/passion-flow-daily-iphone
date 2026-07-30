@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Passion Flow Daily</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -1627,7 +1627,7 @@ function MobileCardPanel(p){
 
   function goToPack(pack){setSelectedPack(pack);setTagFilter('All');setTimeFilter('All');setSessionHidden([]);}
   function shuffleToPack(){goToPack(packs[Math.floor(Math.random()*packs.length)]);}
-  function addCustom(){if(input.trim()){p.onSelectSingle(card.id,input.trim(),true);setInput('');p.onClose();}}
+  function addCustom(){if(input.trim()){p.onSelectSingle(card.id,input.trim(),true);setInput('');p.onClose();setTimeout(function(){var el=document.getElementById('in-progress-section');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},350);}}
   function handleDelete(txt){setSessionHidden(function(h){return h.concat([txt]);});}
 
   var packIdeas=useMemo(function(){
@@ -1687,8 +1687,8 @@ function MobileCardPanel(p){
 
   var addOwnInput=<div className="flex items-center rounded-full border overflow-hidden" style={{background:'rgba(255,255,255,0.6)',borderColor:card.borderColor}}>
     <span className="pl-3 font-sans text-[15px] text-body opacity-40">+</span>
-    <input type="text" value={input} onChange={function(e){setInput(e.target.value);}} onKeyDown={function(e){if(e.key==='Enter')addCustom();}} placeholder="Add your own idea..." className="flex-1 bg-transparent font-sans text-[12px] text-body px-2 py-2.5 min-w-0"/>
-    {input.trim()&&<button onClick={addCustom} className="px-3 font-sans text-[11px] font-semibold" style={{color:card.checkBg}}>Add to my day</button>}
+    <input type="text" value={input} onChange={function(e){setInput(e.target.value);}} onKeyDown={function(e){if(e.key==='Enter')addCustom();}} placeholder="Add your own idea..." className="flex-1 bg-transparent font-sans text-[15px] text-body px-2 py-3.5 min-w-0"/>
+    {input.trim()&&<button onClick={addCustom} className="px-4 font-sans text-[13px] font-semibold" style={{color:card.checkBg}}>Add to my day</button>}
   </div>;
 
   /* ── PACK PICKER ── */
@@ -1979,13 +1979,15 @@ function App(){
     setRecentHistory([]);
     setRemovedDummySaved([]);
     setLogsData([]);
+    setIsPro(false);
   }
 
   useEffect(function(){
     var unsub=firebase.auth().onAuthStateChanged(function(u){
       setCurrentUser(u);
       if(u){
-        setShowPaywall(false);setShowAuth(false);setShowOnboard(false);setShowSplash(false);setShowLanding(false);
+        setShowPaywall(false);setShowAuth(false);setShowSplash(false);setShowLanding(false);
+        rcLogin(u.uid);
         window.db.collection('users').doc(u.uid).get().then(function(doc){
           if(doc.exists){
             var d=doc.data();
@@ -2006,6 +2008,7 @@ function App(){
             if(d.removedDummySaved!==undefined)setRemovedDummySaved(d.removedDummySaved);
             if(d.logsData!==undefined)setLogsData(d.logsData);
             if(d.isPro!==undefined)setIsPro(d.isPro);
+            if(d.onboarded||d.isPro){try{localStorage.setItem('pfd_onboarded','1');}catch(e){}}
             if(d.userName!==undefined)setUserName(d.userName);
             if(d.reminderTime!==undefined)setReminderTime(d.reminderTime);
             // Only restore localStorage backup if it's NEWER than Firestore
@@ -2042,11 +2045,27 @@ function App(){
             resetUserData();
             setUserName(u.displayName||(u.email?u.email.split('@')[0]:''));
             setReminderTime('8:00 AM');
-            window.db.collection('users').doc(u.uid).set({createdAt:Date.now(),email:u.email||''},{merge:true});
+            window.db.collection('users').doc(u.uid).set({createdAt:Date.now(),email:u.email||'',onboarded:true},{merge:true});
+            if(!showOnboardRef.current){setShowOnboard(true);setObStep(8);setObSub(0);setObAnswers({});}
           }
           setUserLoaded(true);
           setMobileTab('flow');
-          if(doc.exists&&!doc.data().isPro){setShowPaywall(true);}
+          if(doc.exists&&!doc.data().isPro){
+            // Double-check RevenueCat before showing paywall
+            if(window.RCPurchases&&window.RCPurchases.Purchases){
+              window.RCPurchases.Purchases.getCustomerInfo().then(function(ci){
+                var active=ci&&ci.customerInfo&&ci.customerInfo.activeSubscriptions&&ci.customerInfo.activeSubscriptions.length>0;
+                if(active){
+                  setIsPro(true);
+                  window.db.collection('users').doc(u.uid).set({isPro:true},{merge:true}).catch(function(){});
+                }else{
+                  setShowPaywall(true);
+                }
+              }).catch(function(){setShowPaywall(true);});
+            }else{
+              setShowPaywall(true);
+            }
+          }
         }).catch(function(e){console.error('load failed',e);setUserLoaded(true);});
       }else{
         resetUserData();
@@ -2073,9 +2092,13 @@ function App(){
   // Ref always holds the latest state — updated after every render, no closure staleness
   var latestStateRef=useRef({});
   var userLoadedRef=useRef(false);
+  var showOnboardRef=useRef(false);
   useEffect(function(){
     userLoadedRef.current=userLoaded;
   },[userLoaded]);
+  useEffect(function(){
+    showOnboardRef.current=showOnboard;
+  },[showOnboard]);
   useEffect(function(){
     if(!currentUser||!userLoaded)return;
     latestStateRef.current={
@@ -2235,12 +2258,20 @@ function App(){
       if(e.reflection)lines.push('   "'+e.reflection+'"');
       lines.push('');
     });
-    var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;a.download='passion-flow-journal.txt';
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);URL.revokeObjectURL(url);
+    var text=lines.join('\n');
+    var blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+    if(isNativeApp&&navigator.share){
+      var file=new File([blob],'passion-flow-journal.txt',{type:'text/plain'});
+      navigator.share({title:'Passion Flow Daily — My Journal',files:[file]}).catch(function(){
+        navigator.share({title:'Passion Flow Daily — My Journal',text:text}).catch(function(){});
+      });
+    } else {
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;a.download='passion-flow-journal.txt';
+      document.body.appendChild(a);a.click();
+      document.body.removeChild(a);URL.revokeObjectURL(url);
+    }
   }
 
   function handleLogout(){
@@ -2313,6 +2344,11 @@ function App(){
     var t=setInterval(function(){setLandDemo(function(p){return(p+1)%5;});},1250);
     return function(){clearInterval(t);};
   },[showLanding]);
+
+  // Auto-advance onboarding after sign-in at step 7
+  useEffect(function(){
+    if(currentUser&&showOnboard&&obStep===7){setShowAuth(false);setObStep(8);setObSub(0);setObAnswers({});}
+  },[currentUser]);
 
   // NOTE: ?subscribed=true URL param handling intentionally removed.
   // isPro is set exclusively by stripe-webhook.js / revenuecat-webhook.js server-side.
@@ -2560,7 +2596,7 @@ function App(){
   var renderMobile=function(){
     return <div className="lg:hidden min-h-screen pb-36" style={{background:'#FAF6F2'}}>
       {/* Header */}
-      <div className="px-5 pt-8 pb-2">
+      <div className="px-5 pb-2" style={{paddingTop:'calc(env(safe-area-inset-top) + 1.25rem)'}}>
         <p className="font-sans text-[10px] font-medium text-body opacity-40 tracking-[0.15em] uppercase mb-2">{dateStr}</p>
         <div className="flex items-center justify-between gap-3 mb-1">
           <h1 className="font-serif text-[20px] text-headline leading-tight min-w-0 flex-1">Welcome back, {userName}. {'\u2728'}</h1>
@@ -2625,7 +2661,7 @@ function App(){
           </div>;
 
           /* Active state: full-width horizontal cards */
-          return <div className="mb-4">
+          return <div className="mb-4" id="in-progress-section">
             {inProgress.length>0&&<div className="mb-3">
               <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-2">In Progress</p>
               <div className="space-y-1.5">
@@ -2914,7 +2950,7 @@ function App(){
         {/* Account */}
         <div className="sc mb-4">
           <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Account</p>
-          <button onClick={function(){window.open('https://billing.stripe.com/p/login/3cI5kDaQJgaQ8i5cEkbo400','_blank');}} className="w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-cream mb-2 transition-all active:scale-[0.98]">
+          <button onClick={function(){window.open(isNativeApp?'itms-apps://apps.apple.com/account/subscriptions':'https://billing.stripe.com/p/login/3cI5kDaQJgaQ8i5cEkbo400','_blank');}} className="w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-cream mb-2 transition-all active:scale-[0.98]">
             <span className="font-sans text-[12px] text-headline">Manage Subscription</span>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#C49A7A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10"/><path d="M8 3l5 5-5 5"/></svg>
           </button>
@@ -3373,7 +3409,7 @@ function App(){
                 {/* Account */}
                 <div className="sc">
                   <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Account</p>
-                  <button onClick={function(){window.open('https://billing.stripe.com/p/login/3cI5kDaQJgaQ8i5cEkbo400','_blank');}} className="w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-cream mb-2 transition-all hover:bg-accent/5 active:scale-[0.98]">
+                  <button onClick={function(){window.open(isNativeApp?'itms-apps://apps.apple.com/account/subscriptions':'https://billing.stripe.com/p/login/3cI5kDaQJgaQ8i5cEkbo400','_blank');}} className="w-full flex items-center justify-between px-3 py-2.5 rounded-[10px] bg-cream mb-2 transition-all hover:bg-accent/5 active:scale-[0.98]">
                     <span className="font-sans text-[13px] text-headline">Manage Subscription</span>
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#C49A7A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10"/><path d="M8 3l5 5-5 5"/></svg>
                   </button>
@@ -3498,7 +3534,7 @@ function App(){
               Google Play soon
             </button>
           </div>
-          <p className="font-sans text-[11px] text-body opacity-30">3-day free trial · cancel anytime</p>
+          <p className="font-sans text-[11px] text-body opacity-30">cancel anytime</p>
         </div>
 
         {/* Hero demo — phone mockup highlight reel */}
@@ -4368,9 +4404,9 @@ function App(){
         <p className="font-serif text-[13px] text-headline italic opacity-40">Passion Flow Daily · SyCorp LLC</p>
         <p className="font-sans text-[10px] text-body opacity-25 mt-1">made with love, for the ones who want to feel balanced ✨</p>
         <div className="flex items-center justify-center gap-1 mt-4">
-          <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="font-sans text-[11px] text-body opacity-40 hover:opacity-70 transition-opacity px-2.5 py-1">Terms of Use</a>
+          <button onClick={function(){setShowTerms(true);}} className="font-sans text-[11px] text-body opacity-40 hover:opacity-70 transition-opacity px-2.5 py-1">Terms of Use</button>
           <span className="w-[3px] h-[3px] rounded-full" style={{background:'rgba(97,68,51,0.25)'}}/>
-          <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="font-sans text-[11px] text-body opacity-40 hover:opacity-70 transition-opacity px-2.5 py-1">Privacy Policy</a>
+          <button onClick={function(){setShowPrivacy(true);}} className="font-sans text-[11px] text-body opacity-40 hover:opacity-70 transition-opacity px-2.5 py-1">Privacy Policy</button>
         </div>
       </footer>
 
@@ -4461,15 +4497,14 @@ function App(){
 
         {/* Screen 5 — Core Promise */}
         {obStep===4&&<div>
-          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">you don't have to do <span className="font-serif italic text-body opacity-50">everything.</span></p>
-          <p className="ob-fade-up font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>just don't <span className="font-serif italic font-bold text-accent">ignore</span> everything else.</p>
+          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">you don't have<br/>to do <span className="font-serif italic text-body opacity-50">everything.</span><br/>just don't <span className="font-serif italic font-bold text-accent">ignore</span><br/>everything else.</p>
           <button onClick={function(){setObStep(5);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
         </div>}
 
         {/* Screen 6 — Product */}
         {obStep===5&&<div>
-          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">this helps you find your <span className="font-serif italic font-bold text-accent">direction.</span></p>
-          <p className="ob-fade-up font-serif text-[18px] md:text-[22px] text-body italic opacity-70" style={{animationDelay:'0.9s'}}>one meaningful idea, one wheel at a time.</p>
+          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">this helps you<br/>find your <span className="font-serif italic font-bold text-accent">direction.</span></p>
+          <p className="ob-fade-up font-serif text-[18px] md:text-[22px] text-body italic opacity-70" style={{animationDelay:'0.9s'}}>one meaningful idea,<br/>one wheel at a time.</p>
           <button onClick={function(){setObStep(6);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
         </div>}
 
@@ -4997,7 +5032,7 @@ function App(){
           </div>
 
           </div>
-          <button onClick={function(){if(demoDone)setObStep(8);}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
+          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else{setObStep(8);}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
           </div>;
         })()}
 
@@ -5066,16 +5101,16 @@ function App(){
       </div>
 
       {/* Skip */}
-      {obStep<10&&<button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowPaywall(true);}} className="fixed top-8 right-6 font-sans text-[11px] text-body opacity-30 hover:opacity-60">skip</button>}
+      {obStep<10&&<button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowOnboard(false);setShowAuth(true);setAuthMode('signup');}} className="fixed top-14 right-4 z-[200] font-sans text-[11px] text-body opacity-30 hover:opacity-60 px-3 py-2">skip</button>}
     </div>}
 
     {/* Paywall */}
     {showPaywall&&<div className="fixed inset-0 z-[90] overflow-y-auto" style={{background:'linear-gradient(160deg, #F8EAEA 0%, #FAF6F2 50%, #F5DDDE 100%)'}}>
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-10">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-10">
         <div className="max-w-[440px] w-full text-center ob-fade-up">
 
           {/* Header */}
-          <h1 className="font-sans text-[30px] md:text-[38px] text-headline leading-[1.15] font-bold mb-3">Build a life you'll actually <span className="font-serif italic text-accent">love.</span></h1>
+          <h1 className="font-sans text-[30px] md:text-[38px] text-headline leading-[1.15] font-bold mb-3">Build a life<br/>you'll actually <span className="font-serif italic text-accent">love.</span></h1>
           <p className="font-serif text-[18px] md:text-[22px] text-headline font-bold mb-8">Start your day with <span className="italic text-accent">clarity</span> and <span className="italic text-accent">balance.</span></p>
 
           {/* Bullets */}
@@ -5133,7 +5168,9 @@ function App(){
               setPurchaseLoading(true);
               Purchases.purchasePackage({aPackage:pkg}).then(function(){
                 setPurchaseLoading(false);
-                setShowPaywall(false);setShowOnboard(false);setShowAuth(true);setAuthMode('signup');
+                setIsPro(true);
+                setShowPaywall(false);setShowOnboard(false);
+                if(currentUser){window.db.collection('users').doc(currentUser.uid).set({isPro:true},{merge:true}).catch(function(){});}
               }).catch(function(e){
                 setPurchaseLoading(false);
                 if(!e.userCancelled)setPurchaseError(e.message||'Something went wrong. Please try again.');
@@ -5147,14 +5184,14 @@ function App(){
             window.location.href=base+'?client_reference_id='+uid+(email?'&prefilled_email='+encodeURIComponent(email):'');
           }} disabled={purchaseLoading} className="w-full font-sans text-[15px] md:text-[16px] font-bold text-white py-4 rounded-full active:scale-[0.98] transition-all"
             style={{background:purchaseLoading?'rgba(196,154,122,0.6)':'#C49A7A',boxShadow:'0 6px 20px rgba(196,154,122,0.35)'}}>
-            {purchaseLoading?'Processing...':'Start my 3-day free trial'}
+            {purchaseLoading?'Processing...':'Start my subscription'}
           </button>
 
           {/* Subscription terms — required by App Store guideline 3.1.2 */}
           <p className="font-sans text-[11px] text-body opacity-40 mt-2 leading-relaxed max-w-[320px] mx-auto">
             {pricePlan==='yearly'
-              ? 'After your 3-day free trial, $29.99/year (≈$2.50/mo). '
-              : 'After your 3-day free trial, $4.99/month. '}
+              ? '$29.99/year (≈$2.50/mo). '
+              : '$4.99/month. '}
             Subscription auto-renews unless cancelled at least 24 hours before the renewal date. Manage in your Apple ID account settings.
           </p>
           <button onClick={function(){setShowPaywall(false);setShowOnboard(false);setShowAuth(true);setAuthMode('login');}} className="font-sans text-[13px] text-body opacity-50 hover:opacity-80 mt-3 transition-opacity block mx-auto">Already have an account? <span className="underline underline-offset-2">Sign in</span></button>
@@ -5201,7 +5238,7 @@ function App(){
           {[
             {t:'1. Overview',b:'Welcome to Passion Flow Daily ("the App"). By downloading, installing, or using the App, you agree to these Terms of Service. Passion Flow Daily is a lifestyle app designed to help you bring balance to your day through guided daily actions across five areas: Create, Mindset, Connect, Move, and Reset. The App is operated by Flow Innovations ("we," "us," or "our").'},
             {t:'2. Eligibility',b:'You must be at least 13 years old to use this App.'},
-            {t:'3. Subscriptions & Billing',b:'Passion Flow Daily offers auto-renewing subscriptions.\n\n• Monthly: $4.99 / month\n• Yearly: $29.99 / year\n• Free Trial: 3 days (when offered)\n\nPayment is charged to your Apple ID account at confirmation. Subscriptions auto-renew unless turned off at least 24 hours before the end of the current period. You can manage your subscription in your Apple ID account settings. Free trials convert automatically unless canceled before they end.'},
+            {t:'3. Subscriptions & Billing',b:'Passion Flow Daily offers auto-renewing subscriptions.\n\n• Monthly: $4.99 / month\n• Yearly: $29.99 / year\n\nPayment is charged to your Apple ID account at confirmation. Subscriptions auto-renew unless turned off at least 24 hours before the end of the current period. You can manage your subscription in your Apple ID account settings.'},
             {t:'4. Restore Purchases',b:'If you have previously subscribed and reinstall the App or switch devices, you can restore your subscription using the "Restore" option.'},
             {t:'5. User Content',b:'You may create reflections, journal entries, voice memos, and saved ideas. You retain full ownership of your content.'},
             {t:'6. Acceptable Use',b:'You agree not to misuse the App, reverse-engineer it, or use it for unlawful or harmful purposes.'},
@@ -5276,23 +5313,23 @@ function App(){
 
     {showAuth&&<div className="fixed inset-0 z-[95] flex flex-col items-center justify-center px-6 overflow-y-auto py-10" style={{background:'linear-gradient(160deg, #F8EAEA 0%, #FAF6F2 50%, #F5DDDE 100%)'}}>
       <div className="w-full max-w-sm fade-in">
-        <button onClick={function(){setShowAuth(false);setShowPaywall(true);}} className="flex items-center gap-1.5 font-sans text-[13px] text-body opacity-50 hover:opacity-80 transition-opacity mb-8 active:scale-[0.97]">
+        <button onClick={function(){setShowAuth(false);if(!(showOnboard&&obStep===7))setShowPaywall(true);}} className="flex items-center gap-1.5 font-sans text-[13px] text-body opacity-50 hover:opacity-80 transition-opacity mb-8 active:scale-[0.97]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           back
         </button>
-        <h1 className="font-serif text-[32px] text-headline text-center mb-2">{authMode==='signup'?'create your account':'welcome back'}</h1>
-        <p className="font-sans text-[14px] text-body text-center mb-8 opacity-70">{authMode==='signup'?'save your flow across devices':'log in to continue your flow'}</p>
+        <h1 className="font-serif text-[32px] text-headline text-center mb-2">{authMode==='signup'?React.createElement(React.Fragment,null,'continue with',React.createElement('br',null),'passion flow daily ✨'):'welcome back'}</h1>
+        <p className="font-sans text-[14px] text-body text-center mb-8 opacity-70">{authMode==='signup'?'Save your flows, progress, and reflections.':'log in to continue your flow'}</p>
 
         <button onClick={function(){
           if(isNativeApp&&window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SignInWithApple){
             var rawNonce=Math.random().toString(36).substring(2,18)+Math.random().toString(36).substring(2,18);
             crypto.subtle.digest('SHA-256',new TextEncoder().encode(rawNonce)).then(function(buf){
               var hashedNonce=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-              return window.Capacitor.Plugins.SignInWithApple.authorize({clientId:'com.passionflowdaily.app',redirectURI:'https://passion-flow-daily.firebaseapp.com/__/auth/handler',scopes:'email name',state:rawNonce,nonce:hashedNonce});
+              return window.Capacitor.Plugins.SignInWithApple.authorize({scopes:'email name',state:rawNonce,nonce:hashedNonce});
             }).then(function(result){
               var cred=new firebase.auth.OAuthProvider('apple.com').credential({idToken:result.response.identityToken,rawNonce:rawNonce});
               return firebase.auth().signInWithCredential(cred);
-            }).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){setAuthError(e.message||'apple sign-in failed');});
+            }).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){if(e.code===1001||e.message&&e.message.indexOf('1001')!==-1||e.userCancelled)return;setAuthError(e.message||'apple sign-in failed');});
           }else{
             var p=new firebase.auth.OAuthProvider('apple.com');
             firebase.auth().signInWithPopup(p).then(function(){setShowAuth(false);}).catch(function(e){setAuthError(e.message||'apple sign-in failed');});
@@ -5302,10 +5339,23 @@ function App(){
           continue with apple
         </button>
 
-        {!isNativeApp&&<button onClick={function(){var p=new firebase.auth.GoogleAuthProvider();firebase.auth().signInWithPopup(p).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){setAuthError(e.message||'google sign-in failed');});}} className="w-full font-sans text-[14px] font-semibold text-headline bg-white py-3.5 mb-5 rounded-full flex items-center justify-center gap-2 border border-black/5 active:scale-[0.98]">
+        <button onClick={function(){
+          if(isNativeApp&&window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.googleAuth){
+            new Promise(function(resolve,reject){
+              window._googleAuthResolve=resolve;
+              window._googleAuthReject=function(e){reject(new Error(typeof e==='string'?e:'google sign-in failed'));};
+              window.webkit.messageHandlers.googleAuth.postMessage({action:'signIn'});
+            }).then(function(result){
+              var cred=firebase.auth.GoogleAuthProvider.credential(result.idToken,result.accessToken);
+              return firebase.auth().signInWithCredential(cred);
+            }).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){if(e.message==='CANCELED')return;setAuthError(e.message||'google sign-in failed');});
+          }else{
+            setAuthError('google sign-in is not available on this device');
+          }
+        }} className="w-full font-sans text-[14px] font-semibold text-headline bg-white py-3.5 mb-5 rounded-full flex items-center justify-center gap-2 border border-black/5 active:scale-[0.98]">
           <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.2 5.2C40.9 35.6 44 30.3 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
           continue with google
-        </button>}
+        </button>
 
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 h-px bg-black/10"></div>
