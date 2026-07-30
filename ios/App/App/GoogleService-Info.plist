@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>307906430534-08m095106pk9sl4057e60m2dp6r48sri.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.307906430534-08m095106pk9sl4057e60m2dp6r48sri</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBRd0zUKyWEPsScZCHps7NZTlr4DQTGOdM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>307906430534</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.passionflowdaily.app</string>
+	<key>PROJECT_ID</key>
+	<string>passion-flow-daily</string>
+	<key>STORAGE_BUCKET</key>
+	<string>passion-flow-daily.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:307906430534:ios:e5d65fd365cdb515c76c47</string>
+</dict>
+</plist>
