@@ -197,6 +197,16 @@
     return target;
   }
 
+  /* Layer 1 drives scoring hardest, so treat it as missing until frictions,
+     bandwidth and time are all answered — regardless of any "completed" flag. */
+  function needsLayer1(profile) {
+    if (!profile) return true;
+    if (!(profile.coreFrictions || []).length) return true;
+    if (!profile.dayBandwidth) return true;
+    if (!profile.defaultTimeBucket) return true;
+    return false;
+  }
+
   function migrateProfileToV3(profile) {
     var p = createEmptyProfileV3();
     if (!profile) return p;
@@ -263,6 +273,7 @@
     CATEGORY_IDS: CATEGORY_IDS,
     CATEGORY_LABELS: CATEGORY_LABELS,
     createEmptyProfileV3: createEmptyProfileV3,
-    migrateProfileToV3: migrateProfileToV3
+    migrateProfileToV3: migrateProfileToV3,
+    needsLayer1: needsLayer1
   };
 })(window);

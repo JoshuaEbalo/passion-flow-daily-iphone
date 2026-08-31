@@ -2022,6 +2022,7 @@ function App(){
   var _profileSavedMsg=useState(''),profileSavedMsg=_profileSavedMsg[0],setProfileSavedMsg=_profileSavedMsg[1];
   var _showDeepPersonalization=useState(false),showDeepPersonalization=_showDeepPersonalization[0],setShowDeepPersonalization=_showDeepPersonalization[1];
   var _deepPersonalizationStep=useState(0),deepPersonalizationStep=_deepPersonalizationStep[0],setDeepPersonalizationStep=_deepPersonalizationStep[1];
+  var _personalizeMode=useState('layer2'),personalizeMode=_personalizeMode[0],setPersonalizeMode=_personalizeMode[1];
   var _pendingRecAction=useState(null),pendingRecAction=_pendingRecAction[0],setPendingRecAction=_pendingRecAction[1];
   var _pickForMeResult=useState(null),pickForMeResult=_pickForMeResult[0],setPickForMeResult=_pickForMeResult[1];
   var _planMyDayResult=useState(null),planMyDayResult=_planMyDayResult[0],setPlanMyDayResult=_planMyDayResult[1];
@@ -2398,39 +2399,53 @@ function App(){
     Object.keys(savedIdeas).forEach(function(k){(savedIdeas[k]||[]).forEach(function(t){allSaved.push(t);});});
     return {selected:allSelected,deleted:allDeleted,saved:allSaved,recentShown:(behaviorSignals.recentShownIdeaIds||[]),recentCompleted:(behaviorSignals.recentCompletedIdeaIds||[]),excludeTexts:excludeTexts||[]};
   }
-  function gateDeepPersonalization(action,categoryId){
-    if(personalizationProfile.deepPersonalizationCompleted){
-      if(action==='pick')executePickForMe(categoryId);
-      else executePlanMyDay();
-      return;
-    }
-    setPendingRecAction(action);
+  function profileNeedsLayer1(profile){
+    var p=profile||personalizationProfile;
+    if(window.PFDConstants&&window.PFDConstants.needsLayer1)return window.PFDConstants.needsLayer1(p);
+    return !(p.coreFrictions||[]).length||!p.dayBandwidth||!p.defaultTimeBucket;
+  }
+  function openPersonalizeFlow(mode,action,categoryId){
+    setPersonalizeMode(mode);
+    setPendingRecAction(action||null);
     setPickCategoryId(categoryId||null);
     setDeepPersonalizationStep(0);
     setShowDeepPersonalization(true);
-    trackEvent('deep_personalization_started',{triggered_by:action,category:categoryId||null});
+    trackEvent(mode==='layer1'?'layer1_catchup_started':'deep_personalization_started',{triggered_by:action||null,category:categoryId||null});
   }
-  function executePickForMe(categoryId){
+  function gateDeepPersonalization(action,categoryId){
+    if(profileNeedsLayer1()&&!personalizationProfile.skippedAt){openPersonalizeFlow('layer1',action,categoryId);return;}
+    if(!personalizationProfile.deepPersonalizationCompleted){openPersonalizeFlow('layer2',action,categoryId);return;}
+    if(action==='pick')executePickForMe(categoryId);
+    else executePlanMyDay();
+  }
+  function executePickForMe(categoryId,profileOverride){
     if(!window.PFDRecommendationEngine||!window.PFDRecommendationComposer)return;
+    var prof=profileOverride||personalizationProfile;
     var ctx=buildRecommendationContext();
     ctx.categoryId=categoryId;
-    var idea=window.PFDRecommendationEngine.pickForCategory(categoryId,personalizationProfile,ctx);
+    var idea=window.PFDRecommendationEngine.pickForCategory(categoryId,prof,ctx);
     if(!idea)return;
-    var composed=window.PFDRecommendationComposer.compose(idea,personalizationProfile,categoryId);
+    var composed=window.PFDRecommendationComposer.compose(idea,prof,categoryId);
     setPickForMeResult({composed:composed,idea:idea,categoryId:categoryId});
     trackEvent('pick_for_me_shown',{category:categoryId});
   }
-  function executePlanMyDay(){
+  function executePlanMyDay(profileOverride){
     if(!window.PFDRecommendationEngine||!window.PFDRecommendationComposer)return;
-    var plan=window.PFDRecommendationEngine.planMyDay(personalizationProfile,buildRecommendationContext());
+    var prof=profileOverride||personalizationProfile;
+    var plan=window.PFDRecommendationEngine.planMyDay(prof,buildRecommendationContext());
     var composed={};
-    Object.keys(plan).forEach(function(cat){composed[cat]=window.PFDRecommendationComposer.compose(plan[cat],personalizationProfile,cat);});
+    Object.keys(plan).forEach(function(cat){composed[cat]=window.PFDRecommendationComposer.compose(plan[cat],prof,cat);});
     setPlanMyDayResult(composed);
     trackEvent('plan_my_day_shown');
   }
   function finishDeepPersonalization(wasSkipped){
     var next=Object.assign({},personalizationProfile,{version:3,updatedAt:Date.now()});
-    if(wasSkipped){
+    if(personalizeMode==='layer1'){
+      next.completedAt=next.completedAt||Date.now();
+      // Nothing answered means they passed — record it so the gate stops asking.
+      next.skippedAt=(next.coreFrictions||[]).length?null:Date.now();
+      trackEvent(wasSkipped?'layer1_catchup_skipped':'layer1_catchup_completed',{goals:(next.overallGoals||[]).length,frictions:(next.coreFrictions||[]).length});
+    }else if(wasSkipped){
       trackEvent('deep_personalization_skipped',{step:deepPersonalizationStep});
     }else{
       next.deepPersonalizationCompleted=true;
@@ -2438,13 +2453,15 @@ function App(){
       trackEvent('deep_personalization_completed',{triggered_by:pendingRecAction});
     }
     setPersonalizationProfile(next);
+    markPersonalized();
     savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
     setShowDeepPersonalization(false);
     var action=pendingRecAction;
     var cat=pickCategoryId;
     setPendingRecAction(null);
-    if(action==='pick')executePickForMe(cat);
-    else if(action==='plan')executePlanMyDay();
+    // Pass `next` explicitly — the state update has not applied yet.
+    if(action==='pick')executePickForMe(cat,next);
+    else if(action==='plan')executePlanMyDay(next);
   }
   function acceptRecommendation(categoryId,text,ideaId){
     selectSingle(categoryId,text,false);
@@ -2523,6 +2540,33 @@ function App(){
       {title:'Move',emoji:'🏃',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">How do you like to move?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{MOVE_PREF_OPTIONS.map(function(opt){var sel=(pp.movePreferences||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('movePreferences',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><div className="flex flex-wrap gap-2 justify-center">{MOVE_FEELING_OPTIONS.map(function(opt){var sel=(pp.moveDesiredFeelings||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('moveDesiredFeelings',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>},
       {title:'Reset',emoji:'🌿',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">How do you recharge best?</p><div className="space-y-2 max-w-[300px] mx-auto">{RESET_STYLE_OPTIONS.map(function(opt){var sel=(pp.resetStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('resetStyles',opt.id,3);}} className="w-full text-left px-3 py-2 rounded-[12px] border" style={chipStyle(sel)}><span className="font-sans text-[12px] font-medium">{opt.label}</span></button>;})}</div></div>}
     ];
+    if(personalizeMode==='layer1'){
+      var l1=[
+        {title:'What matters most right now?',emoji:'✨',sub:'Pick up to 4.',body:<div className="flex flex-wrap gap-2 justify-center">{OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(pp.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleOverallGoal(opt.id);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+        {title:"What's getting in the way?",emoji:'🌙',sub:'Pick up to 2 — this one shapes your suggestions the most.',body:<div className="flex flex-wrap gap-2 justify-center">{CORE_FRICTION_OPTIONS.map(function(opt){var sel=(pp.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[11px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+        {title:'Your day',emoji:'🕰️',sub:'So ideas fit the life you actually have.',body:<div className="text-left max-w-[300px] mx-auto space-y-3">
+          <div><p className="font-sans text-[10px] text-body opacity-45 mb-1.5">Life context</p><div className="flex flex-wrap gap-1.5">{LIFE_CONTEXT_OPTIONS.map(function(opt){var sel=(pp.lifeContext||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('lifeContext',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>
+          <div><p className="font-sans text-[10px] text-body opacity-45 mb-1.5">How full are your days?</p><div className="flex flex-col gap-1.5">{DAY_BANDWIDTH_OPTIONS.map(function(opt){var sel=pp.dayBandwidth===opt.id;return <button key={opt.id} onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{dayBandwidth:opt.id});});}} className="font-sans text-[11px] px-3 py-2 rounded-[12px] border text-left" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>
+          <div><p className="font-sans text-[10px] text-body opacity-45 mb-1.5">Time you usually have</p><div className="flex flex-wrap gap-1.5">{TIME_BUCKET_OPTIONS.map(function(opt){var sel=pp.defaultTimeBucket===opt.id;return <button key={opt.id} onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{defaultTimeBucket:opt.id});});}} className="font-sans text-[12px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>
+        </div>}
+      ];
+      if(deepPersonalizationStep===0){
+        return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Let's make this yours</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">Three quick questions — about 20 seconds — and your suggestions start fitting your actual life.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Maybe later</button></div>;
+      }
+      var s1=l1[deepPersonalizationStep-1];
+      var last1=deepPersonalizationStep>=3;
+      return <div className="text-center px-4">
+        <p className="text-[24px] mb-1">{s1.emoji}</p>
+        <p className="font-serif text-[20px] text-headline italic mb-1">{s1.title}</p>
+        <p className="font-sans text-[12px] text-body opacity-50 mb-4 max-w-[300px] mx-auto">{s1.sub}</p>
+        {s1.body}
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <button onClick={function(){if(last1)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>{last1?'Show me':'Continue'}</button>
+          {!last1&&<button onClick={function(){setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[11px] text-body opacity-40 py-1">Skip this one</button>}
+        </div>
+        <div className="flex justify-center gap-2 mt-5">{[1,2,3].map(function(i){return <div key={i} className="w-[7px] h-[7px] rounded-full transition-all" style={{background:i<=deepPersonalizationStep?'#C49A7A':'rgba(0,0,0,0.08)'}}/>;})}</div>
+      </div>;
+    }
     if(deepPersonalizationStep===0){
       return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">Five fast screens so Pick for Me and Plan My Day feel more you. Skip any screen — or all of them.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip all</button></div>;
     }
@@ -3670,7 +3714,7 @@ function App(){
 
   useEffect(function(){
     if(!currentUser||!userLoaded||!isPro||showOnboard||showPaywall||showAuth||showSplash||showLanding)return;
-    if(profileIsComplete(personalizationProfile)||personalizationProfile.skippedAt)return;
+    if(!profileNeedsLayer1()||personalizationProfile.skippedAt)return;
     try{if(localStorage.getItem('pfd_profile_prompt_dismissed')==='1')return;}catch(e){}
     var isExisting=(logsData&&logsData.length>0)||!!(obAnswers&&obAnswers.q1);
     if(!isExisting)return;
@@ -6668,11 +6712,11 @@ function App(){
       <div className="w-full max-w-[360px] rounded-[24px] p-6 text-center fade-in" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.15)'}} onClick={function(e){e.stopPropagation();}}>
         <p className="text-[28px] mb-2">✨</p>
         <h3 className="font-serif text-[20px] text-headline italic mb-2">Want better recommendations?</h3>
-        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Tell us a little about your goals — it takes under a minute and helps Passion Flow feel more you.</p>
+        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Three quick questions — about 20 seconds — and we'll build you a day that actually fits.</p>
         <button onClick={function(){
           setShowProfilePrompt(false);
           trackEvent('profile_prompt_accepted');
-          setShowOnboard(true);setObStep(9);setObSub(0);
+          openPersonalizeFlow('layer1','plan',null);
         }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2 active:scale-[0.98]" style={{background:'#C49A7A'}}>Personalize my flow</button>
         <button onClick={function(){
           setShowProfilePrompt(false);
@@ -6714,6 +6758,7 @@ function App(){
         <div className="flex flex-col gap-2">
           <button onClick={function(){acceptRecommendation(pickForMeResult.categoryId,pickForMeResult.composed.sourceText,pickForMeResult.composed.ideaId);}} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full" style={{background:'#C49A7A'}}>Add to my day</button>
           <button onClick={shufflePickForMe} className="w-full font-sans text-[13px] font-semibold py-3 rounded-full border" style={{borderColor:'rgba(196,154,122,0.4)',color:'#614433'}}>{'🎲'} Try another</button>
+          {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){var c=pickForMeResult.categoryId;setPickForMeResult(null);openPersonalizeFlow('layer2','pick',c);}} className="font-sans text-[11px] font-medium py-1.5" style={{color:'#C49A7A'}}>Make these fit even better — 5 quick questions</button>}
           <button onClick={function(){setPickForMeResult(null);}} className="font-sans text-[11px] text-body opacity-40 py-1">Not now</button>
         </div>
       </div>
@@ -6735,6 +6780,7 @@ function App(){
           trackEvent('recommendation_accepted',{type:'plan_all'});
           setPlanMyDayResult(null);
         }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2" style={{background:'#C49A7A'}}>Add all to my day</button>
+        {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){setPlanMyDayResult(null);openPersonalizeFlow('layer2','plan',null);}} className="w-full font-sans text-[11px] font-medium py-2" style={{color:'#C49A7A'}}>Make these fit even better — 5 quick questions</button>}
         <button onClick={function(){setPlanMyDayResult(null);}} className="w-full font-sans text-[11px] text-body opacity-40 py-2">Close</button>
       </div>
     </div>}
