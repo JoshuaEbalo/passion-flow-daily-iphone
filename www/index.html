@@ -11,8 +11,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="purchases-capacitor.js"></script>
+  <script src="analytics.js"></script>
+  <script src="personalization-constants.js"></script>
+  <script src="idea-metadata.js"></script>
+  <script src="recommendation-engine.js"></script>
+  <script src="recommendation-composer.js"></script>
+  <script src="plan-day-coherence.js"></script>
+  <script src="persona-fixtures.js"></script>
   <script>window.RCPurchases=RCPurchases;</script>
   <script>
     const firebaseConfig = {
@@ -25,6 +33,9 @@
     };
     firebase.initializeApp(firebaseConfig);
     window.db = firebase.firestore();
+    try {
+      if (firebase.analytics) window.firebaseAnalytics = firebase.analytics();
+    } catch (e) {}
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script>
@@ -119,14 +130,16 @@
     }
     @keyframes heroIdeaSlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     @keyframes heroPulse { 0%,100%{box-shadow:0 0 0 0 rgba(196,154,122,0)} 50%{box-shadow:0 0 0 6px rgba(196,154,122,0.2)} }
-    @keyframes obFadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes obFadeUp { from{opacity:0;transform:translateY(14px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
     @keyframes obBlurIn { from{opacity:0;filter:blur(6px)} to{opacity:1;filter:blur(0)} }
     @keyframes obGlowPulse { 0%,100%{opacity:0.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
     @keyframes obProgress { from{width:0%} to{width:100%} }
     @keyframes obWordIn { from{opacity:0;transform:translateY(8px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
-    .ob-fade-up { animation: obFadeUp 0.7s ease forwards; opacity:0; }
-    .ob-blur-in { animation: obBlurIn 0.5s ease forwards; opacity:0; }
-    .ob-word-in { animation: obWordIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; opacity:0; }
+    @keyframes obCinematicIn { from{opacity:0;transform:translateY(12px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+    .ob-fade-up { animation: obFadeUp 0.85s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
+    .ob-blur-in { animation: obBlurIn 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
+    .ob-word-in { animation: obWordIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
+    .ob-cinematic { animation: obCinematicIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
     @keyframes overlayIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
     @keyframes overlayOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.95)} }
     .overlay-in { animation: overlayIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
@@ -1742,9 +1755,9 @@ function MobileCardPanel(p){
           </div>
         </div>
         <div className="flex-shrink-0 px-5 pt-3 pb-8" style={{borderTop:'1px solid '+card.borderColor,background:card.color}}>
-          <button onClick={shuffleToPack} className="w-full font-sans text-[14px] font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 mb-2 active:scale-[0.98] transition-all"
+          <button onClick={function(){if(p.onPickForMe)p.onPickForMe(card.id);}} className="w-full font-sans text-[14px] font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 mb-2 active:scale-[0.98] transition-all"
             style={{background:card.checkBg,color:'white',boxShadow:'0 4px 14px rgba(0,0,0,0.12)'}}>
-            {'🎲'} Shuffle Ideas
+            {'✨'} Pick for Me
           </button>
           {addOwnInput}
         </div>
@@ -1936,14 +1949,83 @@ function MobileProgress(p){
   </div>;
 }
 
+var OVERALL_GOAL_OPTIONS=(window.PFDConstants&&window.PFDConstants.OVERALL_GOAL_OPTIONS)||[];
+var CORE_FRICTION_OPTIONS=(window.PFDConstants&&window.PFDConstants.CORE_FRICTION_OPTIONS)||[];
+var LIFE_CONTEXT_OPTIONS=(window.PFDConstants&&window.PFDConstants.LIFE_CONTEXT_OPTIONS)||[];
+var DAY_BANDWIDTH_OPTIONS=(window.PFDConstants&&window.PFDConstants.DAY_BANDWIDTH_OPTIONS)||[];
+var TIME_BUCKET_OPTIONS=(window.PFDConstants&&window.PFDConstants.TIME_BUCKET_OPTIONS)||[];
+var CREATE_INTEREST_OPTIONS=(window.PFDConstants&&window.PFDConstants.CREATE_INTEREST_OPTIONS)||[];
+var CREATE_MUSIC_SUBTYPES=(window.PFDConstants&&window.PFDConstants.CREATE_MUSIC_SUBTYPES)||[];
+var CREATE_ART_SUBTYPES=(window.PFDConstants&&window.PFDConstants.CREATE_ART_SUBTYPES)||[];
+var CREATE_BUILDING_TYPES=(window.PFDConstants&&window.PFDConstants.CREATE_BUILDING_TYPES)||[];
+var MINDSET_NEED_OPTIONS=(window.PFDConstants&&window.PFDConstants.MINDSET_NEED_OPTIONS)||[];
+var MINDSET_FORMAT_OPTIONS=(window.PFDConstants&&window.PFDConstants.MINDSET_FORMAT_OPTIONS)||[];
+var CONNECT_TARGET_OPTIONS=(window.PFDConstants&&window.PFDConstants.CONNECT_TARGET_OPTIONS)||[];
+var PARTNER_STYLE_OPTIONS=(window.PFDConstants&&window.PFDConstants.PARTNER_STYLE_OPTIONS)||[];
+var FRIEND_STYLE_OPTIONS=(window.PFDConstants&&window.PFDConstants.FRIEND_STYLE_OPTIONS)||[];
+var MOVE_PREF_OPTIONS=(window.PFDConstants&&window.PFDConstants.MOVE_PREF_OPTIONS)||[];
+var MOVE_FEELING_OPTIONS=(window.PFDConstants&&window.PFDConstants.MOVE_FEELING_OPTIONS)||[];
+var RESET_STYLE_OPTIONS=(window.PFDConstants&&window.PFDConstants.RESET_STYLE_OPTIONS)||[];
+function createEmptyPersonalizationProfile(){
+  if(window.PFDConstants&&window.PFDConstants.createEmptyProfileV3)return window.PFDConstants.createEmptyProfileV3();
+  return {version:3,completedAt:null,skippedAt:null,overallGoals:[],coreFrictions:[],lifeContext:[],dayBandwidth:null,defaultTimeBucket:null,deepPersonalizationCompleted:false,updatedAt:null};
+}
+function normalizePersonalizationProfile(profile){
+  if(!profile)return createEmptyPersonalizationProfile();
+  if(window.PFDConstants&&window.PFDConstants.migrateProfileToV3){
+    var p=window.PFDConstants.migrateProfileToV3(profile);
+    if(!profile.version||profile.version<3)p.deepPersonalizationCompleted=false;
+    return p;
+  }
+  return profile;
+}
+function createEmptyBehaviorSignals(){
+  return {frequentlyAcceptedTags:{},frequentlySkippedTags:{},recentCategories:[],recentCompletedIdeaIds:[],recentShownIdeaIds:[],lastUpdatedAt:Date.now()};
+}
+function migrateObAnswersToProfile(obAnswers){
+  var legacy={version:2,completedAt:null,skippedAt:null,overallGoals:[],categoryGoals:{create:[],learn:[],connect:[],move:[],nourish:[]},preferredTime:null,preferredSetting:null,socialPreference:null,updatedAt:null};
+  if(!obAnswers)return normalizePersonalizationProfile(legacy);
+  var q1Map={Creativity:['creativity','new_hobbies'],Energy:['more_movement','consistency'],Relationships:['deeper_connections'],Mindset:['mindfulness','growth'],Rest:['self_care']};
+  var q2Map={Inspired:['creativity','adventure'],Intentional:['consistency','mindfulness'],Adventurous:['adventure','new_hobbies'],Balanced:['self_care','deeper_connections']};
+  var q3Map={'More creative':'creativity','More consistent':'consistency','More present':'mindfulness','More intentional':'growth'};
+  if(obAnswers.q1&&q1Map[obAnswers.q1])legacy.overallGoals=q1Map[obAnswers.q1].slice();
+  if(obAnswers.q2&&q2Map[obAnswers.q2])q2Map[obAnswers.q2].forEach(function(g){if(legacy.overallGoals.indexOf(g)<0&&legacy.overallGoals.length<5)legacy.overallGoals.push(g);});
+  if(obAnswers.q3&&q3Map[obAnswers.q3]){var g3=q3Map[obAnswers.q3];if(legacy.overallGoals.indexOf(g3)<0&&legacy.overallGoals.length<5)legacy.overallGoals.push(g3);}
+  legacy.completedAt=Date.now();
+  legacy.updatedAt=Date.now();
+  var migrated=normalizePersonalizationProfile(legacy);
+  migrated.deepPersonalizationCompleted=false;
+  return migrated;
+}
+function profileIsComplete(profile){return !!(profile&&profile.completedAt);}
+
 function App(){
   useEffect(function(){var el=document.getElementById('html-splash');if(el)el.remove();},[]);
+  useEffect(function(){
+    if(window.PFDIdeaMetadata&&typeof FOCUS_PACKS!=='undefined'){
+      window.pfdIdeaIndex=window.PFDIdeaMetadata.buildIdeaIndex(FOCUS_PACKS);
+    }
+  },[]);
+  useEffect(function(){
+    if(showOnboard&&obStep===0)trackEvent('onboarding_started');
+  },[showOnboard,obStep]);
   var _splash=useState(true),showSplash=_splash[0],setShowSplash=_splash[1];
   var _splashFade=useState(false),splashFading=_splashFade[0],setSplashFading=_splashFade[1];
   var _onboard=useState(false),showOnboard=_onboard[0],setShowOnboard=_onboard[1];
   var _obStep=useState(0),obStep=_obStep[0],setObStep=_obStep[1];
   var _obSub=useState(0),obSub=_obSub[0],setObSub=_obSub[1];
   var _obAnswers=useState({}),obAnswers=_obAnswers[0],setObAnswers=_obAnswers[1];
+  var _personalizationProfile=useState(createEmptyPersonalizationProfile),personalizationProfile=_personalizationProfile[0],setPersonalizationProfile=_personalizationProfile[1];
+  var _behaviorSignals=useState(createEmptyBehaviorSignals),behaviorSignals=_behaviorSignals[0],setBehaviorSignals=_behaviorSignals[1];
+  var _showProfilePrompt=useState(false),showProfilePrompt=_showProfilePrompt[0],setShowProfilePrompt=_showProfilePrompt[1];
+  var _expandedCatGoals=useState({}),expandedCatGoals=_expandedCatGoals[0],setExpandedCatGoals=_expandedCatGoals[1];
+  var _profileSavedMsg=useState(''),profileSavedMsg=_profileSavedMsg[0],setProfileSavedMsg=_profileSavedMsg[1];
+  var _showDeepPersonalization=useState(false),showDeepPersonalization=_showDeepPersonalization[0],setShowDeepPersonalization=_showDeepPersonalization[1];
+  var _deepPersonalizationStep=useState(0),deepPersonalizationStep=_deepPersonalizationStep[0],setDeepPersonalizationStep=_deepPersonalizationStep[1];
+  var _pendingRecAction=useState(null),pendingRecAction=_pendingRecAction[0],setPendingRecAction=_pendingRecAction[1];
+  var _pickForMeResult=useState(null),pickForMeResult=_pickForMeResult[0],setPickForMeResult=_pickForMeResult[1];
+  var _planMyDayResult=useState(null),planMyDayResult=_planMyDayResult[0],setPlanMyDayResult=_planMyDayResult[1];
+  var _pickCategoryId=useState(null),pickCategoryId=_pickCategoryId[0],setPickCategoryId=_pickCategoryId[1];
   var _obBuilding=useState(false),obBuilding=_obBuilding[0],setObBuilding=_obBuilding[1];
   var _obDone=useState(false),obDone=_obDone[0],setObDone=_obDone[1];
   var _showPaywall=useState(false),showPaywall=_showPaywall[0],setShowPaywall=_showPaywall[1];
@@ -1956,10 +2038,69 @@ function App(){
   var _currentUser=useState(null),currentUser=_currentUser[0],setCurrentUser=_currentUser[1];
   var _userLoaded=useState(false),userLoaded=_userLoaded[0],setUserLoaded=_userLoaded[1];
   var isNativeApp=!!(window.Capacitor&&(window.Capacitor.isNativePlatform?window.Capacitor.isNativePlatform():window.Capacitor.isNative));
+  var _dbg=useState(!!window.__PFD_DEBUG__),isDebugBuild=_dbg[0],setIsDebugBuild=_dbg[1];
+  useEffect(function(){
+    function markDebug(){if(window.__PFD_DEBUG__)setIsDebugBuild(true);}
+    markDebug();
+    window.addEventListener('pfd-debug',markDebug);
+    var n=0;
+    var t=setInterval(function(){markDebug();if(++n>24)clearInterval(t);},500);
+    return function(){clearInterval(t);window.removeEventListener('pfd-debug',markDebug);};
+  },[]);
+  var _rcStoreLoad=useState(false),rcStoreLoading=_rcStoreLoad[0],setRcStoreLoading=_rcStoreLoad[1];
+  var _rcStoreReady=useState(false),rcStoreReady=_rcStoreReady[0],setRcStoreReady=_rcStoreReady[1];
+  var _rcStoreDiag=useState(''),rcStoreDiag=_rcStoreDiag[0],setRcStoreDiag=_rcStoreDiag[1];
+  var _rcPrices=useState({monthly:null,yearly:null}),rcPrices=_rcPrices[0],setRcPrices=_rcPrices[1];
   var _rcOff=useState(null),rcOfferings=_rcOff[0],setRcOfferings=_rcOff[1];
   var _purLoad=useState(false),purchaseLoading=_purLoad[0],setPurchaseLoading=_purLoad[1];
   var _purErr=useState(''),purchaseError=_purErr[0],setPurchaseError=_purErr[1];
   var _offline=useState(false),isOffline=_offline[0],setIsOffline=_offline[1];
+  var _loadErr=useState(''),loadError=_loadErr[0],setLoadError=_loadErr[1];
+  var _photoMsg=useState(''),photoSaveMsg=_photoMsg[0],setPhotoSaveMsg=_photoMsg[1];
+
+  // Daily/user data — must be declared BEFORE save/load effects (hook order matters)
+  var _cs=useState({}),cardStates=_cs[0],setCardStates=_cs[1];
+  var _si=useState({}),selectedIdeas=_si[0],setSelectedIdeas=_si[1];
+  var _ci=useState({}),customIdeas=_ci[0],setCustomIdeas=_ci[1];
+  var _sv=useState({}),savedIdeas=_sv[0],setSavedIdeas=_sv[1];
+  var _di=useState({}),deletedIdeas=_di[0],setDeletedIdeas=_di[1];
+  var _sf=useState([]),selectedFeelings=_sf[0],setSelectedFeelings=_sf[1];
+  var _fs=useState(null),flowScore=_fs[0],setFlowScore=_fs[1];
+  var _sat=useState(null),satisfaction=_sat[0],setSatisfaction=_sat[1];
+  var _ref=useState(''),reflection=_ref[0],setReflection=_ref[1];
+  var _rs=useState(false),reflectionSaved=_rs[0],setReflectionSaved=_rs[1];
+  var _vms=useState(false),hasVoiceMemo=_vms[0],setHasVoiceMemo=_vms[1];
+  var _str=useState(0),streak=_str[0],setStreak=_str[1];
+  var _sess=useState(function(){var s={};CARDS.forEach(function(c){s[c.id]=0;});return s;}),sessions=_sess[0],setSessions=_sess[1];
+  var _rh=useState([]),recentHistory=_rh[0],setRecentHistory=_rh[1];
+  var _rds=useState([]),removedDummySaved=_rds[0],setRemovedDummySaved=_rds[1];
+  var _logs=useState([]),logsData=_logs[0],setLogsData=_logs[1];
+  var _isPro=useState(false),isPro=_isPro[0],setIsPro=_isPro[1];
+  var _uname=useState(''),userName=_uname[0],setUserName=_uname[1];
+  var _reminder=useState('8:00 AM'),reminderTime=_reminder[0],setReminderTime=_reminder[1];
+
+  function applyBackupFields(b){
+    if(b.cardStates!==undefined)setCardStates(b.cardStates);
+    if(b.selectedIdeas!==undefined)setSelectedIdeas(b.selectedIdeas);
+    if(b.customIdeas!==undefined)setCustomIdeas(b.customIdeas);
+    if(b.savedIdeas!==undefined)setSavedIdeas(b.savedIdeas);
+    if(b.deletedIdeas!==undefined)setDeletedIdeas(b.deletedIdeas);
+    if(b.selectedFeelings!==undefined)setSelectedFeelings(b.selectedFeelings);
+    if(b.flowScore!==undefined)setFlowScore(b.flowScore);
+    if(b.satisfaction!==undefined)setSatisfaction(b.satisfaction);
+    if(b.reflection!==undefined)setReflection(b.reflection);
+    if(b.hasVoiceMemo!==undefined)setHasVoiceMemo(b.hasVoiceMemo);
+    if(b.voiceMemoText!==undefined)setVoiceMemoText(b.voiceMemoText);
+    if(b.streak!==undefined)setStreak(b.streak);
+    if(b.sessions!==undefined)setSessions(b.sessions);
+    if(b.recentHistory!==undefined)setRecentHistory(b.recentHistory);
+    if(b.removedDummySaved!==undefined)setRemovedDummySaved(b.removedDummySaved);
+    if(b.logsData!==undefined)setLogsData(b.logsData);
+    if(b.userName!==undefined)setUserName(b.userName);
+    if(b.reminderTime!==undefined)setReminderTime(b.reminderTime);
+    if(b.personalizationProfile!==undefined)setPersonalizationProfile(normalizePersonalizationProfile(b.personalizationProfile));
+    if(b.behaviorSignals!==undefined)setBehaviorSignals(b.behaviorSignals);
+  }
 
   function resetUserData(){
     setCardStates({});
@@ -1986,7 +2127,9 @@ function App(){
     var unsub=firebase.auth().onAuthStateChanged(function(u){
       setCurrentUser(u);
       if(u){
-        setShowPaywall(false);setShowAuth(false);setShowSplash(false);setShowLanding(false);
+        setShowAuth(false);setShowSplash(false);setShowLanding(false);
+        setLoadError('');
+        dataHydratedRef.current=false;
         rcLogin(u.uid);
         window.db.collection('users').doc(u.uid).get().then(function(doc){
           if(doc.exists){
@@ -2011,94 +2154,403 @@ function App(){
             if(d.onboarded||d.isPro){try{localStorage.setItem('pfd_onboarded','1');}catch(e){}}
             if(d.userName!==undefined)setUserName(d.userName);
             if(d.reminderTime!==undefined)setReminderTime(d.reminderTime);
+            if(d.personalizationProfile!==undefined){
+              var normProfile=normalizePersonalizationProfile(d.personalizationProfile);
+              setPersonalizationProfile(normProfile);
+              if(normProfile.completedAt||normProfile.skippedAt){try{localStorage.setItem('pfd_personalized','1');}catch(e){}}
+              if(!d.personalizationProfile.version||d.personalizationProfile.version<3){
+                window.db.collection('users').doc(u.uid).set({personalizationProfile:normProfile},{merge:true}).catch(function(){});
+              }
+            }else if(d.obAnswers){
+              var migrated=migrateObAnswersToProfile(d.obAnswers);
+              setPersonalizationProfile(migrated);
+              try{localStorage.setItem('pfd_personalized','1');}catch(e){}
+              window.db.collection('users').doc(u.uid).set({personalizationProfile:migrated},{merge:true}).catch(function(){});
+            }
+            if(d.obAnswers!==undefined)setObAnswers(d.obAnswers);
+            if(d.behaviorSignals!==undefined)setBehaviorSignals(d.behaviorSignals);
+            else if(doc.exists){
+              var emptySignals=createEmptyBehaviorSignals();
+              setBehaviorSignals(emptySignals);
+              window.db.collection('users').doc(u.uid).set({behaviorSignals:emptySignals},{merge:true}).catch(function(){});
+            }else setBehaviorSignals(createEmptyBehaviorSignals());
             // Only restore localStorage backup if it's NEWER than Firestore
-            // This prevents Safari's old local data from overwriting changes made on Chrome/desktop
             try{
               var bk=localStorage.getItem('pfd_backup_'+u.uid);
               if(bk){
                 var b=JSON.parse(bk);
                 var firestoreTime=d.updatedAt||0;
                 var localTime=b.savedAt||0;
-                if(localTime>firestoreTime){
-                  if(b.cardStates!==undefined)setCardStates(b.cardStates);
-                  if(b.selectedIdeas!==undefined)setSelectedIdeas(b.selectedIdeas);
-                  if(b.customIdeas!==undefined)setCustomIdeas(b.customIdeas);
-                  if(b.savedIdeas!==undefined)setSavedIdeas(b.savedIdeas);
-                  if(b.deletedIdeas!==undefined)setDeletedIdeas(b.deletedIdeas);
-                  if(b.selectedFeelings!==undefined)setSelectedFeelings(b.selectedFeelings);
-                  if(b.flowScore!==undefined)setFlowScore(b.flowScore);
-                  if(b.satisfaction!==undefined)setSatisfaction(b.satisfaction);
-                  if(b.reflection!==undefined)setReflection(b.reflection);
-                  if(b.hasVoiceMemo!==undefined)setHasVoiceMemo(b.hasVoiceMemo);
-                  if(b.voiceMemoText!==undefined)setVoiceMemoText(b.voiceMemoText);
-                  if(b.streak!==undefined)setStreak(b.streak);
-                  if(b.sessions!==undefined)setSessions(b.sessions);
-                  if(b.recentHistory!==undefined)setRecentHistory(b.recentHistory);
-                  if(b.removedDummySaved!==undefined)setRemovedDummySaved(b.removedDummySaved);
-                  if(b.logsData!==undefined)setLogsData(b.logsData);
-                  if(b.userName!==undefined)setUserName(b.userName);
-                  if(b.reminderTime!==undefined)setReminderTime(b.reminderTime);
-                }
+                if(localTime>firestoreTime)applyBackupFields(b);
               }
             }catch(e){}
           }else{
-            resetUserData();
-            setUserName(u.displayName||(u.email?u.email.split('@')[0]:''));
-            setReminderTime('8:00 AM');
-            window.db.collection('users').doc(u.uid).set({createdAt:Date.now(),email:u.email||'',onboarded:true},{merge:true});
-            if(!showOnboardRef.current){setShowOnboard(true);setObStep(8);setObSub(0);setObAnswers({});}
-          }
-          setUserLoaded(true);
-          setMobileTab('flow');
-          if(doc.exists&&!doc.data().isPro){
-            // Double-check RevenueCat before showing paywall
-            if(window.RCPurchases&&window.RCPurchases.Purchases){
-              window.RCPurchases.Purchases.getCustomerInfo().then(function(ci){
-                var active=ci&&ci.customerInfo&&ci.customerInfo.activeSubscriptions&&ci.customerInfo.activeSubscriptions.length>0;
-                if(active){
-                  setIsPro(true);
-                  window.db.collection('users').doc(u.uid).set({isPro:true},{merge:true}).catch(function(){});
-                }else{
-                  setShowPaywall(true);
-                }
-              }).catch(function(){setShowPaywall(true);});
-            }else{
-              setShowPaywall(true);
+            var restored=false;
+            try{
+              var bk2=localStorage.getItem('pfd_backup_'+u.uid);
+              if(bk2){
+                applyBackupFields(JSON.parse(bk2));
+                restored=true;
+              }
+            }catch(e){}
+            // Only brand-new Firebase accounts get defaults — never because user tapped Sign Up
+            if(authIsNewUserRef.current){
+              if(!restored)resetUserData();
+              setUserName(u.displayName||(u.email?u.email.split('@')[0]:''));
+              if(!restored)setReminderTime('8:00 AM');
+              var pendingProOnSignup=false;
+              try{pendingProOnSignup=localStorage.getItem('pfd_pending_pro')==='1';}catch(e){}
+              window.db.collection('users').doc(u.uid).set({
+                createdAt:Date.now(),email:u.email||'',userName:u.displayName||(u.email?u.email.split('@')[0]:''),
+                onboarded:pendingProOnSignup,
+                behaviorSignals:createEmptyBehaviorSignals()
+              },{merge:true});
+              var alreadyOnboarded=false;
+              try{alreadyOnboarded=!!localStorage.getItem('pfd_onboarded');}catch(e){}
+              if(authIsNewUserRef.current&&!hasPersonalizedFlow()){
+                routeToPersonalization();
+              }else if(!showOnboardRef.current&&!alreadyOnboarded){
+                setShowOnboard(true);setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());
+              }
+            }else if(u.displayName&&!userName){
+              setUserName(u.displayName);
             }
           }
-        }).catch(function(e){console.error('load failed',e);setUserLoaded(true);});
+          authIsNewUserRef.current=false;
+          dataHydratedRef.current=true;
+          setUserLoaded(true);
+          setMobileTab('flow');
+          if(u.providerData&&u.providerData.length){
+            var providers=u.providerData.map(function(p){return p.providerId;});
+            window.db.collection('users').doc(u.uid).set({authProviders:providers},{merge:true}).catch(function(){});
+          }
+          if(doc.exists&&doc.data().isPro){
+            applyPaywallOrPersonalize(true);
+          }else if(hasDevPro(u.uid)){
+            setIsPro(true);
+            applyPaywallOrPersonalize(true);
+            try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+            saveOnboardedOnly(u.uid).catch(function(){});
+          }else{
+            var pendingPro=false;
+            try{pendingPro=localStorage.getItem('pfd_pending_pro')==='1';}catch(e){}
+            if(pendingPro){
+              try{localStorage.removeItem('pfd_pending_pro');}catch(e){}
+              setIsPro(true);
+              applyPaywallOrPersonalize(true);
+              try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+              saveOnboardedOnly(u.uid).catch(function(){});
+            }else if(doc.exists&&doc.data().obAnswers){
+              try{localStorage.setItem('pfd_personalized','1');}catch(e){}
+            }
+            if(!pendingPro&&!hasDevPro(u.uid)&&!(doc.exists&&doc.data().isPro)){
+              if(window.RCPurchases&&window.RCPurchases.Purchases){
+                window.RCPurchases.Purchases.getCustomerInfo().then(function(ci){
+                  if(rcHasPro(ci)){
+                    setIsPro(true);
+                    try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+                    saveOnboardedOnly(u.uid).catch(function(){});
+                    applyPaywallOrPersonalize(true);
+                  }else{
+                    applyPaywallOrPersonalize(false);
+                  }
+                }).catch(function(){applyPaywallOrPersonalize(false);});
+              }else{
+                applyPaywallOrPersonalize(false);
+              }
+            }
+          }
+        }).catch(function(e){
+          console.error('load failed',e);
+          dataHydratedRef.current=false;
+          setLoadError('Could not load your saved data. Check your connection and reopen the app.');
+        });
       }else{
         resetUserData();
         setUserName('');
         setUserLoaded(false);
+        dataHydratedRef.current=false;
+        authIsNewUserRef.current=false;
       }
     });
     return unsub;
   },[]);
 
-  function saveUserNow(uid){
-    if(!uid)return Promise.resolve();
-    return window.db.collection('users').doc(uid).set({
-      cardStates:cardStates,selectedIdeas:selectedIdeas,customIdeas:customIdeas,
-      savedIdeas:savedIdeas,deletedIdeas:deletedIdeas,selectedFeelings:selectedFeelings,
-      flowScore:flowScore,satisfaction:satisfaction,reflection:reflection,
-      hasVoiceMemo:hasVoiceMemo,voiceMemoText:voiceMemoText,streak:streak,sessions:sessions,
-      recentHistory:recentHistory,removedDummySaved:removedDummySaved,logsData:logsData,
-      userName:userName,reminderTime:reminderTime,
+  function buildUserPayload(s){
+    if(!s||Object.keys(s).length===0)return null;
+    return {
+      cardStates:s.cardStates,selectedIdeas:s.selectedIdeas,customIdeas:s.customIdeas,
+      savedIdeas:s.savedIdeas,deletedIdeas:s.deletedIdeas,selectedFeelings:s.selectedFeelings,
+      flowScore:s.flowScore,satisfaction:s.satisfaction,reflection:s.reflection,
+      hasVoiceMemo:s.hasVoiceMemo,voiceMemoText:s.voiceMemoText,streak:s.streak,sessions:s.sessions,
+      recentHistory:s.recentHistory,removedDummySaved:s.removedDummySaved,logsData:s.logsData,
+      userName:s.userName,reminderTime:s.reminderTime,
       updatedAt:Date.now()
-    },{merge:true});
+    };
+  }
+
+  function saveUserNow(uid,dataOverride){
+    if(!uid)return Promise.resolve();
+    var payload=buildUserPayload(dataOverride||latestStateRef.current);
+    if(!payload)return Promise.resolve();
+    var emptyDaily=!Object.keys(payload.cardStates||{}).length&&!Object.keys(payload.selectedIdeas||{}).length&&!(payload.logsData||[]).length;
+    if(!emptyDaily)return window.db.collection('users').doc(uid).set(payload,{merge:true});
+    return window.db.collection('users').doc(uid).get().then(function(doc){
+      if(!doc.exists)return window.db.collection('users').doc(uid).set(payload,{merge:true});
+      var d=doc.data()||{};
+      var hasCloud=(d.logsData&&d.logsData.length)||Object.keys(d.cardStates||{}).length||Object.keys(d.selectedIdeas||{}).length;
+      if(!hasCloud)return window.db.collection('users').doc(uid).set(payload,{merge:true});
+      var safe=Object.assign({},payload);
+      delete safe.cardStates;delete safe.selectedIdeas;delete safe.logsData;
+      delete safe.customIdeas;delete safe.savedIdeas;delete safe.deletedIdeas;
+      delete safe.selectedFeelings;delete safe.flowScore;delete safe.satisfaction;
+      delete safe.reflection;delete safe.hasVoiceMemo;delete safe.voiceMemoText;
+      delete safe.streak;delete safe.sessions;delete safe.recentHistory;
+      if(Object.keys(safe).length<=1)return Promise.resolve();
+      return window.db.collection('users').doc(uid).set(safe,{merge:true});
+    });
+  }
+
+  function persistNow(){
+    if(!currentUser||!userLoadedRef.current||!dataHydratedRef.current)return;
+    saveUserNow(currentUser.uid).catch(function(e){console.error('[firestore] persist failed',e);});
   }
 
   // Ref always holds the latest state — updated after every render, no closure staleness
   var latestStateRef=useRef({});
+  var rcProductsCacheRef=useRef({packages:{monthly:null,yearly:null},products:{monthly:null,yearly:null}});
   var userLoadedRef=useRef(false);
+  var dataHydratedRef=useRef(false);
+  var authIsNewUserRef=useRef(false);
   var showOnboardRef=useRef(false);
+  var obStepRef=useRef(0);
   useEffect(function(){
     userLoadedRef.current=userLoaded;
   },[userLoaded]);
   useEffect(function(){
     showOnboardRef.current=showOnboard;
   },[showOnboard]);
+  useEffect(function(){
+    obStepRef.current=obStep;
+  },[obStep]);
+
+  function hasPersonalizedFlow(){
+    try{return localStorage.getItem('pfd_personalized')==='1';}catch(e){return false;}
+  }
+  function markPersonalized(){
+    try{localStorage.setItem('pfd_personalized','1');}catch(e){}
+  }
+  function saveObAnswersToCloud(uid,answers){
+    if(!uid||!answers)return;
+    window.db.collection('users').doc(uid).set({obAnswers:answers,onboardedPreferences:true},{merge:true}).catch(function(){});
+  }
+  function savePersonalizationProfileToCloud(uid,profile,signals){
+    if(!uid||!profile)return;
+    var payload={personalizationProfile:profile,onboardedPreferences:true,updatedAt:Date.now()};
+    if(signals)payload.behaviorSignals=signals;
+    window.db.collection('users').doc(uid).set(payload,{merge:true}).catch(function(){});
+  }
+  function finishPersonalizationFlow(profile,wasSkipped){
+    var next=Object.assign({},profile,{version:3,updatedAt:Date.now()});
+    if(wasSkipped){next.skippedAt=Date.now();}else{next.completedAt=Date.now();next.skippedAt=null;}
+    setPersonalizationProfile(next);
+    markPersonalized();
+    savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
+    trackEvent(wasSkipped?'personalization_skipped':'onboarding_layer1_complete',{goals:(next.overallGoals||[]).length,frictions:(next.coreFrictions||[]).length});
+    if(isPro){
+      setShowOnboard(false);
+      return;
+    }
+    setTimeout(function(){setObStep(10);setObBuilding(true);setTimeout(function(){setObBuilding(false);setObStep(11);setObDone(true);trackEvent('onboarding_completed');},2200);},300);
+  }
+  function savePersonalizationFromSettings(){
+    var next=Object.assign({},personalizationProfile,{version:3,updatedAt:Date.now(),completedAt:personalizationProfile.completedAt||Date.now()});
+    setPersonalizationProfile(next);
+    markPersonalized();
+    savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
+    trackEvent('personalization_updated');
+    setProfileSavedMsg('Saved ✨');
+    setTimeout(function(){setProfileSavedMsg('');},2500);
+  }
+  function toggleOverallGoal(goalId){
+    setPersonalizationProfile(function(p){
+      var goals=(p.overallGoals||[]).slice();
+      var idx=goals.indexOf(goalId);
+      if(idx>=0)goals.splice(idx,1);
+      else if(goals.length<4)goals.push(goalId);
+      return Object.assign({},p,{overallGoals:goals});
+    });
+  }
+  function toggleProfileArray(field,itemId,max){
+    max=max||99;
+    setPersonalizationProfile(function(p){
+      var arr=(p[field]||[]).slice();
+      var idx=arr.indexOf(itemId);
+      if(idx>=0)arr.splice(idx,1);
+      else if(arr.length<max)arr.push(itemId);
+      return Object.assign({},p,{[field]:arr});
+    });
+  }
+  function buildRecommendationContext(excludeTexts){
+    var allSelected=[],allDeleted=[],allSaved=[];
+    Object.keys(selectedIdeas).forEach(function(k){(selectedIdeas[k]||[]).forEach(function(t){allSelected.push(t);});});
+    Object.keys(deletedIdeas).forEach(function(k){(deletedIdeas[k]||[]).forEach(function(t){allDeleted.push(t);});});
+    Object.keys(savedIdeas).forEach(function(k){(savedIdeas[k]||[]).forEach(function(t){allSaved.push(t);});});
+    return {selected:allSelected,deleted:allDeleted,saved:allSaved,recentShown:(behaviorSignals.recentShownIdeaIds||[]),recentCompleted:(behaviorSignals.recentCompletedIdeaIds||[]),excludeTexts:excludeTexts||[]};
+  }
+  function gateDeepPersonalization(action,categoryId){
+    if(personalizationProfile.deepPersonalizationCompleted){
+      if(action==='pick')executePickForMe(categoryId);
+      else executePlanMyDay();
+      return;
+    }
+    setPendingRecAction(action);
+    setPickCategoryId(categoryId||null);
+    setDeepPersonalizationStep(0);
+    setShowDeepPersonalization(true);
+    trackEvent('deep_personalization_started',{triggered_by:action,category:categoryId||null});
+  }
+  function executePickForMe(categoryId){
+    if(!window.PFDRecommendationEngine||!window.PFDRecommendationComposer)return;
+    var ctx=buildRecommendationContext();
+    ctx.categoryId=categoryId;
+    var idea=window.PFDRecommendationEngine.pickForCategory(categoryId,personalizationProfile,ctx);
+    if(!idea)return;
+    var composed=window.PFDRecommendationComposer.compose(idea,personalizationProfile,categoryId);
+    setPickForMeResult({composed:composed,idea:idea,categoryId:categoryId});
+    trackEvent('pick_for_me_shown',{category:categoryId});
+  }
+  function executePlanMyDay(){
+    if(!window.PFDRecommendationEngine||!window.PFDRecommendationComposer)return;
+    var plan=window.PFDRecommendationEngine.planMyDay(personalizationProfile,buildRecommendationContext());
+    var composed={};
+    Object.keys(plan).forEach(function(cat){composed[cat]=window.PFDRecommendationComposer.compose(plan[cat],personalizationProfile,cat);});
+    setPlanMyDayResult(composed);
+    trackEvent('plan_my_day_shown');
+  }
+  function finishDeepPersonalization(wasSkipped){
+    var next=Object.assign({},personalizationProfile,{version:3,updatedAt:Date.now()});
+    if(wasSkipped){
+      trackEvent('deep_personalization_skipped',{step:deepPersonalizationStep});
+    }else{
+      next.deepPersonalizationCompleted=true;
+      next.deepPersonalizationTriggeredBy=pendingRecAction;
+      trackEvent('deep_personalization_completed',{triggered_by:pendingRecAction});
+    }
+    setPersonalizationProfile(next);
+    savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
+    setShowDeepPersonalization(false);
+    var action=pendingRecAction;
+    var cat=pickCategoryId;
+    setPendingRecAction(null);
+    if(action==='pick')executePickForMe(cat);
+    else if(action==='plan')executePlanMyDay();
+  }
+  function acceptRecommendation(categoryId,text,ideaId){
+    selectSingle(categoryId,text,false);
+    trackEvent('recommendation_accepted',{category:categoryId,idea_id:ideaId||null});
+    setPickForMeResult(null);
+    setPlanMyDayResult(null);
+    setOpenCard(null);
+  }
+  function shufflePickForMe(){
+    if(!pickForMeResult||!window.PFDRecommendationEngine)return;
+    var cat=pickForMeResult.categoryId;
+    var exclude=[pickForMeResult.composed.sourceText];
+    var ctx=buildRecommendationContext(exclude);
+    var idea=window.PFDRecommendationEngine.pickForCategory(cat,personalizationProfile,ctx);
+    if(!idea)return;
+    var composed=window.PFDRecommendationComposer.compose(idea,personalizationProfile,cat);
+    setPickForMeResult({composed:composed,idea:idea,categoryId:cat});
+    trackEvent('pick_for_me_shown',{category:cat,reshuffle:true});
+  }
+  function renderPersonalizationFields(compact){
+    var chipCls='font-sans text-[12px] px-4 py-2 rounded-full border transition-all active:scale-[0.95]';
+    var chipStyle=function(sel){return {background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'};};
+    var pp=personalizationProfile;
+    return <div>
+      <div className="mb-4">
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Overall goals <span className="normal-case opacity-60">(up to 4)</span></p>
+        <div className="flex flex-wrap gap-2">{OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(pp.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleOverallGoal(opt.id);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+      </div>
+      <div className="mb-4">
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Core frictions <span className="normal-case opacity-60">(max 2)</span></p>
+        <div className="flex flex-wrap gap-2">{CORE_FRICTION_OPTIONS.map(function(opt){var sel=(pp.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+      </div>
+      <div className="mb-4">
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Life context</p>
+        <div className="flex flex-wrap gap-2">{LIFE_CONTEXT_OPTIONS.map(function(opt){var sel=(pp.lifeContext||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('lifeContext',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+      </div>
+      <div className="mb-4">
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Day bandwidth</p>
+        <div className="flex flex-wrap gap-2">{DAY_BANDWIDTH_OPTIONS.map(function(opt){var sel=pp.dayBandwidth===opt.id;return <button key={opt.id} type="button" onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{dayBandwidth:opt.id});});}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+      </div>
+      <div className="mb-4">
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Default time</p>
+        <div className="flex flex-wrap gap-2">{TIME_BUCKET_OPTIONS.map(function(opt){var sel=pp.defaultTimeBucket===opt.id;return <button key={opt.id} type="button" onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{defaultTimeBucket:opt.id});});}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+      </div>
+      {!compact&&<div>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2 mt-2">Deep personalization — Create</p>
+        <div className="flex flex-wrap gap-2 mb-3">{CREATE_INTEREST_OPTIONS.map(function(opt){var sel=(pp.createInterests||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('createInterests',opt.id,5);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+        {(pp.createInterests||[]).indexOf('music')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Music</p><div className="flex flex-wrap gap-1.5">{CREATE_MUSIC_SUBTYPES.map(function(opt){var sel=(pp.createMusicSubtypes||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('createMusicSubtypes',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        {(pp.createInterests||[]).indexOf('art_crafts')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Art</p><div className="flex flex-wrap gap-1.5">{CREATE_ART_SUBTYPES.map(function(opt){var sel=(pp.createArtSubtypes||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('createArtSubtypes',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Mindset needs</p>
+        <div className="flex flex-wrap gap-2 mb-3">{MINDSET_NEED_OPTIONS.map(function(opt){var sel=(pp.mindsetNeeds||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('mindsetNeeds',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Mindset formats</p>
+        <div className="flex flex-wrap gap-2 mb-3">{MINDSET_FORMAT_OPTIONS.map(function(opt){var sel=(pp.mindsetFormats||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('mindsetFormats',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Connect with</p>
+        <div className="flex flex-wrap gap-2 mb-3">{CONNECT_TARGET_OPTIONS.map(function(opt){var sel=(pp.connectTargets||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('connectTargets',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+        {(pp.connectTargets||[]).indexOf('partner')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Partner style</p><div className="flex flex-wrap gap-1.5 mb-2">{PARTNER_STYLE_OPTIONS.map(function(opt){var sel=(pp.partnerConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('partnerConnectionStyles',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div><input type="text" value={pp.partnerName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{partnerName:e.target.value});});}} placeholder="Partner name (optional)" className="w-full bg-cream rounded-[10px] border border-transparent font-sans text-[12px] text-headline px-3 py-2"/></div>}
+        {(pp.connectTargets||[]).indexOf('friends')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Friend style</p><div className="flex flex-wrap gap-1.5">{FRIEND_STYLE_OPTIONS.map(function(opt){var sel=(pp.friendConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('friendConnectionStyles',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Move preferences</p>
+        <div className="flex flex-wrap gap-2 mb-3">{MOVE_PREF_OPTIONS.map(function(opt){var sel=(pp.movePreferences||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('movePreferences',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">How you want to feel</p>
+        <div className="flex flex-wrap gap-2 mb-3">{MOVE_FEELING_OPTIONS.map(function(opt){var sel=(pp.moveDesiredFeelings||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('moveDesiredFeelings',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Reset styles</p>
+        <div className="space-y-2 mb-2">{RESET_STYLE_OPTIONS.map(function(opt){var sel=(pp.resetStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('resetStyles',opt.id,3);}} className="w-full text-left px-3 py-2.5 rounded-[12px] border" style={chipStyle(sel)}><span className="font-sans text-[12px] font-medium block">{opt.label}</span>{opt.desc&&<span className="font-sans text-[10px] opacity-55">{opt.desc}</span>}</button>;})}</div>
+        {(pp.createInterests||[]).indexOf('building_business')>=0&&<div className="mb-3"><input type="text" value={pp.projectName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{projectName:e.target.value});});}} placeholder="Project name (optional)" className="w-full bg-cream rounded-[10px] border border-transparent font-sans text-[12px] text-headline px-3 py-2"/></div>}
+      </div>}
+    </div>;
+  }
+  function renderDeepPersonalizationScreen(){
+    var pp=personalizationProfile;
+    var chipCls='font-sans text-[12px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]';
+    var chipStyle=function(sel){return {background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'};};
+    var screens=[
+      {title:'Create',emoji:'✨',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">What do you like to make or explore?</p><div className="flex flex-wrap gap-2 justify-center">{CREATE_INTEREST_OPTIONS.map(function(opt){var sel=(pp.createInterests||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('createInterests',opt.id,5);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>{(pp.createInterests||[]).indexOf('building_business')>=0&&<input type="text" value={pp.projectName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{projectName:e.target.value});});}} placeholder="Project name (optional)" className="w-full max-w-[280px] mx-auto mt-3 bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/>}</div>},
+      {title:'Mindset',emoji:'📚',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">What would help your headspace?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{MINDSET_NEED_OPTIONS.slice(0,6).map(function(opt){var sel=(pp.mindsetNeeds||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('mindsetNeeds',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><div className="flex flex-wrap gap-2 justify-center">{MINDSET_FORMAT_OPTIONS.slice(0,5).map(function(opt){var sel=(pp.mindsetFormats||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('mindsetFormats',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>},
+      {title:'Connect',emoji:'💛',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">Who matters most right now?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{CONNECT_TARGET_OPTIONS.map(function(opt){var sel=(pp.connectTargets||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('connectTargets',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>{(pp.connectTargets||[]).indexOf('partner')>=0&&<div><div className="flex flex-wrap gap-2 justify-center mb-2">{PARTNER_STYLE_OPTIONS.slice(0,4).map(function(opt){var sel=(pp.partnerConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('partnerConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><input type="text" value={pp.partnerName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{partnerName:e.target.value});});}} placeholder="Partner name (optional)" className="w-full max-w-[240px] mx-auto bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/></div>}</div>},
+      {title:'Move',emoji:'🏃',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">How do you like to move?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{MOVE_PREF_OPTIONS.map(function(opt){var sel=(pp.movePreferences||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('movePreferences',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><div className="flex flex-wrap gap-2 justify-center">{MOVE_FEELING_OPTIONS.map(function(opt){var sel=(pp.moveDesiredFeelings||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('moveDesiredFeelings',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>},
+      {title:'Reset',emoji:'🌿',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">How do you recharge best?</p><div className="space-y-2 max-w-[300px] mx-auto">{RESET_STYLE_OPTIONS.map(function(opt){var sel=(pp.resetStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('resetStyles',opt.id,3);}} className="w-full text-left px-3 py-2 rounded-[12px] border" style={chipStyle(sel)}><span className="font-sans text-[12px] font-medium">{opt.label}</span></button>;})}</div></div>}
+    ];
+    if(deepPersonalizationStep===0){
+      return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">Five fast screens so Pick for Me and Plan My Day feel more you. Skip any screen — or all of them.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip all</button></div>;
+    }
+    var scr=screens[deepPersonalizationStep-1];
+    var isLast=deepPersonalizationStep>=5;
+    return <div className="text-center px-4"><p className="text-[24px] mb-1">{scr.emoji}</p><p className="font-serif text-[20px] text-headline italic mb-1">{scr.title}</p><p className="font-sans text-[10px] text-body opacity-35 mb-4">{deepPersonalizationStep} of 5</p>{scr.body}<div className="mt-6 flex flex-col items-center gap-2"><button onClick={function(){if(isLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>{isLast?'Finish':'Continue'}</button><button onClick={function(){if(isLast)finishDeepPersonalization(true);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[11px] text-body opacity-40 py-1">{isLast?'Skip & finish':'Skip'}</button></div></div>;
+  }
+  function routeToPersonalization(){
+    setShowPaywall(false);
+    setShowOnboard(true);
+    setObStep(9);
+    setObSub(0);
+  }
+  function shouldShowPaywallGate(){
+    return hasPersonalizedFlow()||obStepRef.current>=11;
+  }
+  function applyPaywallOrPersonalize(isProKnown){
+    if(isProKnown){
+      setShowPaywall(false);
+      setShowOnboard(false);
+      return;
+    }
+    if(!shouldShowPaywallGate()){
+      routeToPersonalization();
+      return;
+    }
+    setShowPaywall(true);
+  }
   useEffect(function(){
     if(!currentUser||!userLoaded)return;
     latestStateRef.current={
@@ -2116,29 +2568,36 @@ function App(){
     if(!currentUser)return;
     var uid=currentUser.uid;
     function onUnload(){
-      if(!userLoadedRef.current)return; // skip if data was never loaded
+      if(!userLoadedRef.current||!dataHydratedRef.current)return;
       var s=latestStateRef.current;
-      if(!s||!s.logsData)return;
+      if(!s||Object.keys(s).length===0)return;
       try{
         var toSave=Object.assign({},s,{savedAt:Date.now()});
         localStorage.setItem('pfd_backup_'+uid,JSON.stringify(toSave));
       }catch(e){}
+      saveUserNow(uid,s).catch(function(e){console.error('[firestore] unload save failed',e);});
     }
     window.addEventListener('beforeunload',onUnload);
     window.addEventListener('pagehide',onUnload);
     document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')onUnload();});
+    if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App){
+      window.Capacitor.Plugins.App.addListener('appStateChange',function(state){
+        if(!state.isActive)onUnload();
+      }).then(function(h){window._pfdAppStateHandle=h;});
+    }
     return function(){
       window.removeEventListener('beforeunload',onUnload);
       window.removeEventListener('pagehide',onUnload);
+      if(window._pfdAppStateHandle&&window._pfdAppStateHandle.remove)window._pfdAppStateHandle.remove();
     };
   },[currentUser]);
 
   useEffect(function(){
-    if(!currentUser||!userLoaded)return;
+    if(!currentUser||!userLoaded||!dataHydratedRef.current)return;
     var uid=currentUser.uid;
     var t=setTimeout(function(){
       saveUserNow(uid).catch(function(e){console.error('[firestore] save failed',e);});
-    },1500);
+    },200);
     return function(){clearTimeout(t);};
   },[currentUser,userLoaded,cardStates,selectedIdeas,customIdeas,savedIdeas,deletedIdeas,selectedFeelings,flowScore,satisfaction,reflection,hasVoiceMemo,voiceMemoText,streak,sessions,recentHistory,removedDummySaved,logsData,userName,reminderTime]);
 
@@ -2148,7 +2607,7 @@ function App(){
     if(!user)return;
     var uid=user.uid;
     user.delete().then(function(){
-      try{localStorage.removeItem('pfd_backup_'+uid);}catch(e){}
+      try{localStorage.removeItem('pfd_backup_'+uid);clearDevPro(uid);}catch(e){}
       window.db.collection('users').doc(uid).delete().catch(function(){});
       setCurrentUser(null);setUserLoaded(false);resetUserData();setUserName('');
       setShowAuth(false);setShowOnboard(false);
@@ -2162,39 +2621,316 @@ function App(){
     });
   }
 
-  function rcLogin(uid){
-    if(window.RCPurchases&&uid){
-      window.RCPurchases.Purchases.logIn({appUserID:uid}).catch(function(e){console.error('[RC] logIn failed',e);});
+  function devProStorageKey(uid){return 'pfd_dev_pro_'+uid;}
+  function markDevPro(uid){
+    if(!uid||!window.__PFD_DEBUG__)return;
+    try{localStorage.setItem(devProStorageKey(uid),'1');}catch(e){}
+  }
+  function hasDevPro(uid){
+    if(!uid||!window.__PFD_DEBUG__)return false;
+    try{return localStorage.getItem(devProStorageKey(uid))==='1';}catch(e){return false;}
+  }
+  function clearDevPro(uid){
+    if(!uid)return;
+    try{localStorage.removeItem(devProStorageKey(uid));}catch(e){}
+  }
+
+  function saveOnboardedOnly(uid){
+    if(!uid)return Promise.resolve();
+    return window.db.collection('users').doc(uid).set({onboarded:true},{merge:true});
+  }
+
+  function grantProAccess(fromSimulate){
+    var uid=(firebase.auth().currentUser&&firebase.auth().currentUser.uid)||(currentUser&&currentUser.uid);
+    setIsPro(true);
+    setShowPaywall(false);
+    setShowOnboard(false);
+    try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+    if(uid){
+      try{localStorage.removeItem('pfd_pending_pro');}catch(e){}
+      if(fromSimulate)markDevPro(uid);
+      return saveOnboardedOnly(uid);
     }
+    try{localStorage.setItem('pfd_pending_pro','1');}catch(e){}
+    setShowAuth(true);
+    setAuthMode('signup');
+    return Promise.resolve();
+  }
+
+  function rcLogin(uid){
+    if(!window.RCPurchases||!uid)return Promise.resolve(false);
+    return configureRevenueCat().then(function(){
+      return window.RCPurchases.Purchases.logIn({appUserID:uid});
+    }).then(function(){
+      if(isNativeApp)return prefetchRcStore(0);
+      return true;
+    }).catch(function(e){
+      console.error('[RC] logIn failed',e);
+      return false;
+    });
+  }
+
+  function saveImageToPhotosNative(canvas){
+    return new Promise(function(resolve,reject){
+      if(!(isNativeApp&&window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.saveImageToPhotos)){
+        reject(new Error('NOT_NATIVE'));
+        return;
+      }
+      window._saveImageResolve=resolve;
+      window._saveImageReject=function(code){
+        reject(new Error(code||'SAVE_FAILED'));
+      };
+      var dataUrl=canvas.toDataURL('image/png');
+      var base64=dataUrl.indexOf(',')>=0?dataUrl.split(',')[1]:dataUrl;
+      window.webkit.messageHandlers.saveImageToPhotos.postMessage({base64:base64});
+    });
+  }
+
+  function roundRectPath(ctx,x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function wrapTextLines(ctx,text,maxWidth){
+    var words=(text||'').split(/\s+/).filter(Boolean);
+    var lines=[],line='';
+    words.forEach(function(word){
+      var test=line?(line+' '+word):word;
+      if(ctx.measureText(test).width>maxWidth&&line){
+        lines.push(line);
+        line=word;
+      }else{
+        line=test;
+      }
+    });
+    if(line)lines.push(line);
+    return lines.length?lines:[''];
+  }
+
+  function measureActivityCard(ctx,act,textW){
+    ctx.font='12px Inter, sans-serif';
+    var lines=wrapTextLines(ctx,act,textW);
+    var titleH=10;
+    var lineH=15;
+    var gap=2;
+    var contentH=titleH+gap+lines.length*lineH;
+    var padY=8;
+    var cardH=padY*2+contentH;
+    return {lines:lines,cardH:cardH,padY:padY,titleH:titleH,lineH:lineH,gap:gap,contentH:contentH};
+  }
+
+  function drawActivityCard(ctx,c,act,x,y,contentW){
+    var padX=12;
+    var emojiCol=22;
+    var textW=contentW-padX*2-emojiCol;
+    var m=measureActivityCard(ctx,act,textW);
+    roundRectPath(ctx,x,y,contentW,m.cardH,12);
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.fill();
+    ctx.strokeStyle=c.borderColor;
+    ctx.lineWidth=1;
+    ctx.stroke();
+    var textX=x+padX+emojiCol;
+    var contentTop=y+m.padY;
+    ctx.textBaseline='middle';
+    ctx.textAlign='left';
+    ctx.font='15px Inter, sans-serif';
+    ctx.fillStyle='#614433';
+    ctx.fillText(c.emoji,x+padX,contentTop+m.contentH/2);
+    ctx.textBaseline='top';
+    ctx.font='700 9px Inter, sans-serif';
+    ctx.fillStyle='rgba(97,68,51,0.4)';
+    ctx.fillText(c.title.toUpperCase(),textX,contentTop);
+    ctx.font='12px Inter, sans-serif';
+    ctx.fillStyle='#614433';
+    var ty=contentTop+m.titleH+m.gap;
+    m.lines.forEach(function(line){
+      ctx.fillText(line,textX,ty);
+      ty+=m.lineH;
+    });
+    return m.cardH;
+  }
+
+  function measureFeelingPill(ctx,label,emoji){
+    var padX=10,pillH=26,fontSize=9,gap=4;
+    ctx.font='600 '+fontSize+'px Inter, sans-serif';
+    var labelW=ctx.measureText(label).width;
+    var emojiW=emoji?(ctx.measureText(emoji).width+gap):0;
+    return {w:padX*2+emojiW+labelW,h:pillH,padX:padX,fontSize:fontSize,gap:gap};
+  }
+
+  function drawFeelingPill(ctx,x,y,label,emoji){
+    var m=measureFeelingPill(ctx,label,emoji);
+    roundRectPath(ctx,x,y,m.w,m.h,m.h/2);
+    ctx.fillStyle='#FFFFFF';
+    ctx.fill();
+    ctx.strokeStyle='rgba(196,154,122,0.22)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+    var midY=y+m.h/2;
+    ctx.textBaseline='middle';
+    ctx.textAlign='left';
+    ctx.fillStyle='#C49A7A';
+    var tx=x+m.padX;
+    if(emoji){
+      ctx.font=m.fontSize+'px Inter, sans-serif';
+      ctx.fillText(emoji,tx,midY);
+      tx+=ctx.measureText(emoji).width+m.gap;
+    }
+    ctx.font='600 '+m.fontSize+'px Inter, sans-serif';
+    ctx.fillText(label,tx,midY);
+    return m.w+6;
+  }
+
+  function computeShareCardHeight(log){
+    var W=320,PAD=24,contentW=W-PAD*2;
+    var cv=document.createElement('canvas');
+    var ctx=cv.getContext('2d');
+    var y=PAD+8+20+24+16;
+    var padX=12,emojiCol=22,textW=contentW-padX*2-emojiCol;
+    CARDS.forEach(function(c){
+      var act=log.activities[c.id];
+      if(!act)return;
+      y+=measureActivityCard(ctx,act,textW).cardH+10;
+    });
+    y+=6+14;
+    if(log.feelings&&log.feelings.length)y+=26+16;
+    if(log.reflection){
+      ctx.font='italic 12px Georgia, serif';
+      var rLines=wrapTextLines(ctx,'"'+log.reflection+'"',contentW);
+      y+=rLines.length*17+16;
+    }
+    y+=12+1+14+12+PAD;
+    return Math.ceil(y);
+  }
+
+  function renderShareCardCanvas(log,scale){
+    scale=scale||3;
+    var W=320,PAD=24,contentW=W-PAD*2;
+    return document.fonts.ready.then(function(){
+      var totalH=computeShareCardHeight(log);
+      var canvas=document.createElement('canvas');
+      canvas.width=W*scale;
+      canvas.height=totalH*scale;
+      var ctx=canvas.getContext('2d');
+      ctx.scale(scale,scale);
+
+      var grd=ctx.createLinearGradient(0,0,W*0.3,totalH);
+      grd.addColorStop(0,'#FCE4EC');
+      grd.addColorStop(0.4,'#FAF6F2');
+      grd.addColorStop(0.7,'#EDE6F6');
+      grd.addColorStop(1,'#E0F2E9');
+      ctx.fillStyle=grd;
+      ctx.fillRect(0,0,W,totalH);
+
+      var y=PAD;
+      ctx.font='9px Inter, sans-serif';
+      ctx.fillStyle='rgba(97,68,51,0.4)';
+      ctx.textBaseline='top';
+      ctx.textAlign='left';
+      ctx.fillText('PASSION FLOW DAILY',PAD,y);
+      y+=8+20;
+      ctx.font='italic 20px Georgia, serif';
+      ctx.fillStyle='#614433';
+      ctx.fillText(log.date,PAD,y);
+      y+=24+16;
+
+      CARDS.forEach(function(c){
+        var act=log.activities[c.id];
+        if(!act)return;
+        var cardH=drawActivityCard(ctx,c,act,PAD,y,contentW);
+        y+=cardH+10;
+      });
+
+      y+=6;
+      var flowEmoji=log.flow<=3?'\uD83D\uDCA8':log.flow<=7?'\uD83C\uDFAF':'\uD83D\uDE80';
+      ctx.font='11px Inter, sans-serif';
+      ctx.fillStyle='rgba(97,68,51,0.5)';
+      var flowText='flow: '+log.flow+'/10 '+flowEmoji;
+      ctx.fillText(flowText,PAD,y);
+      if(log.balance){
+        var bal=log.balance==='yes'?'\u2728 balanced':log.balance==='getting-there'?'\uD83D\uDE0C getting there':'\uD83D\uDE15 not quite';
+        var flowW=ctx.measureText(flowText).width;
+        ctx.fillStyle='#614433';
+        ctx.fillText(bal,PAD+flowW+8,y);
+      }
+      y+=20;
+
+      if(log.feelings&&log.feelings.length){
+        var px=PAD;
+        log.feelings.forEach(function(f){
+          var fe=FEELINGS.find(function(x){return x.label===f;});
+          px+=drawFeelingPill(ctx,px,y,f,fe?fe.emoji:'');
+        });
+        y+=26+16;
+      }
+
+      if(log.reflection){
+        ctx.font='italic 12px Georgia, serif';
+        ctx.fillStyle='rgba(97,68,51,0.55)';
+        var rLines=wrapTextLines(ctx,'"'+log.reflection+'"',contentW);
+        rLines.forEach(function(line){
+          ctx.fillText(line,PAD,y);
+          y+=17;
+        });
+        y+=4;
+      }
+
+      y+=12;
+      ctx.strokeStyle='rgba(0,0,0,0.06)';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(PAD,y);
+      ctx.lineTo(PAD+contentW,y);
+      ctx.stroke();
+      y+=14;
+
+      ctx.font='8px Inter, sans-serif';
+      ctx.fillStyle='rgba(97,68,51,0.3)';
+      ctx.fillText('PASSION FLOW DAILY',PAD,y);
+      ctx.font='italic 9px Georgia, serif';
+      ctx.fillStyle='rgba(196,154,122,0.6)';
+      ctx.textAlign='right';
+      ctx.fillText('passionflowdaily.com',PAD+contentW,y);
+      ctx.textAlign='left';
+
+      return canvas;
+    });
   }
 
   function handleSaveShareImage(log){
-    var el=document.getElementById('share-card-capture');
-    if(!el||!window.html2canvas){
-      // html2canvas not loaded — nothing to do, just close
+    renderShareCardCanvas(log,3).then(function(canvas){
       setShareLog(null);
-      return;
-    }
-    window.html2canvas(el,{scale:3,useCORS:true,allowTaint:true,backgroundColor:'#FAF6F2',logging:false}).then(function(canvas){
-      setShareLog(null);
-      function doDownload(){
-        var url=canvas.toDataURL('image/png');
-        var a=document.createElement('a');a.href=url;a.download='my-flow-day.png';
-        document.body.appendChild(a);a.click();document.body.removeChild(a);
-      }
-      // On mobile: use native share sheet so user can save to Photos
-      if(navigator.share&&navigator.canShare){
-        canvas.toBlob(function(blob){
-          if(!blob){doDownload();return;}
-          var file=new File([blob],'my-flow-day.png',{type:'image/png'});
-          if(navigator.canShare({files:[file]})){
-            navigator.share({title:'My day on Passion Flow Daily',files:[file]}).catch(doDownload);
-          } else {doDownload();}
-        },'image/png');
-      } else {doDownload();}
+      saveImageToPhotosNative(canvas).then(function(){
+        setPhotoSaveMsg('Saved to Photos successfully');
+        setTimeout(function(){setPhotoSaveMsg('');},2800);
+      }).catch(function(err){
+        if(err&&err.message==='NOT_NATIVE'){
+          var url=canvas.toDataURL('image/png');
+          var a=document.createElement('a');a.href=url;a.download='my-flow-day.png';
+          document.body.appendChild(a);a.click();document.body.removeChild(a);
+          setPhotoSaveMsg('Image downloaded');
+          setTimeout(function(){setPhotoSaveMsg('');},2600);
+          return;
+        }
+        if(err&&err.message==='PERMISSION_DENIED'){
+          setPhotoSaveMsg('Photos access denied — enable in Settings → Passion Flow Daily → Photos');
+        }else{
+          setPhotoSaveMsg('Could not save image — please try again');
+        }
+        setTimeout(function(){setPhotoSaveMsg('');},3200);
+      });
     }).catch(function(err){
-      console.error('[html2canvas]',err);
+      console.error('[share-card]',err);
       setShareLog(null);
+      setPhotoSaveMsg('Could not create image — please try again');
+      setTimeout(function(){setPhotoSaveMsg('');},2600);
     });
   }
 
@@ -2207,9 +2943,8 @@ function App(){
       else{navigator.clipboard&&navigator.clipboard.writeText(text).then(function(){window.alert('Copied to clipboard!');});}
     }
     // Capture first, then dismiss modal and share
-    var el=document.getElementById('share-card-capture');
-    if(el&&window.html2canvas&&navigator.share&&navigator.canShare){
-      window.html2canvas(el,{scale:3,useCORS:true,allowTaint:true,backgroundColor:'#FAF6F2',logging:false}).then(function(canvas){
+    if(navigator.share&&navigator.canShare){
+      renderShareCardCanvas(log,3).then(function(canvas){
         setShareLog(null);
         canvas.toBlob(function(blob){
           if(!blob){shareTextOnly();return;}
@@ -2224,8 +2959,258 @@ function App(){
     }
   }
 
+  var AUTH_PROVIDER_LOOKUP='https://passionflowdaily.com/.netlify/functions/auth-providers';
+
+  function accountExistsMessage(methods){
+    methods=methods||[];
+    if(methods.indexOf('google.com')>=0){
+      return 'An account already exists with this email. Please continue with Google instead.';
+    }
+    if(methods.indexOf('apple.com')>=0){
+      return 'An account already exists with this email. Please continue with Apple instead.';
+    }
+    if(methods.indexOf('password')>=0){
+      return 'An account already exists with this email. Please sign in with your email and password instead.';
+    }
+    return 'An account already exists with this email. Please continue with Google or Apple, or sign in with your password — whichever you used originally.';
+  }
+
+  function lookupAuthProviders(email){
+    return fetch(AUTH_PROVIDER_LOOKUP,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email.trim().toLowerCase()})
+    }).then(function(r){return r.json();}).then(function(data){
+      if(!data||data.exists===undefined)return null;
+      if(!data.exists)return [];
+      return data.providers||[];
+    }).catch(function(){return null;});
+  }
+
+  function resolveExistingAccount(email,methods,opts){
+    methods=methods||[];
+    opts=opts||{};
+    if(methods.length>0){
+      return Promise.resolve({exists:true,methods:methods,message:accountExistsMessage(methods)});
+    }
+    if(opts.trustExists){
+      return Promise.resolve({exists:true,methods:[],message:accountExistsMessage([])});
+    }
+    if(!opts.forceLookup){
+      return Promise.resolve({exists:false,methods:[]});
+    }
+    return lookupAuthProviders(email).then(function(providers){
+      if(providers===null){
+        return {exists:false,methods:[],lookupFailed:true};
+      }
+      if(providers.length>0){
+        return {exists:true,methods:providers,message:accountExistsMessage(providers)};
+      }
+      return {exists:false,methods:[]};
+    });
+  }
+
+  function checkExistingEmailAccount(email,opts){
+    opts=opts||{};
+    var normalized=email.trim().toLowerCase();
+    return firebase.auth().fetchSignInMethodsForEmail(normalized).then(function(methods){
+      return resolveExistingAccount(normalized,methods||[],{
+        trustExists:!!opts.knownExists&&!opts.forceLookup,
+        forceLookup:!!opts.forceLookup||!!opts.knownExists
+      });
+    }).catch(function(){
+      return resolveExistingAccount(normalized,[],{
+        trustExists:!!opts.knownExists&&!opts.forceLookup,
+        forceLookup:!!opts.forceLookup||!!opts.knownExists
+      });
+    });
+  }
+
+  function finishAuthSession(authResult){
+    var isNew=!!(authResult.additionalUserInfo&&authResult.additionalUserInfo.isNewUser);
+    authIsNewUserRef.current=isNew;
+    rcLogin(authResult.user&&authResult.user.uid);
+    setShowAuth(false);
+    setAuthError('');
+  }
+
+  function handleGoogleSignIn(){
+    if(isNativeApp&&window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.googleAuth){
+      new Promise(function(resolve,reject){
+        window._googleAuthResolve=resolve;
+        window._googleAuthReject=function(e){reject(new Error(typeof e==='string'?e:'google sign-in failed'));};
+        window.webkit.messageHandlers.googleAuth.postMessage({action:'signIn'});
+      }).then(function(result){
+        var cred=firebase.auth.GoogleAuthProvider.credential(result.idToken,result.accessToken);
+        return firebase.auth().signInWithCredential(cred);
+      }).then(function(authResult){
+        finishAuthSession(authResult);
+      }).catch(function(e){
+        if(e.code==='auth/account-exists-with-different-credential'){
+          var errEmail=(e.customData&&e.customData.email)||authEmail||'';
+          if(errEmail){
+            checkExistingEmailAccount(errEmail,{forceLookup:true}).then(function(check){
+              setAuthError(check.exists?check.message:'Could not sign in. Try again or sign up with a new account.');
+            });
+          }else{
+            setAuthError('Could not sign in. Try again or use a different sign-in method.');
+          }
+          return;
+        }
+        if(e.message==='CANCELED')return;
+        setAuthError(e.message||'google sign-in failed');
+      });
+    }else{
+      setAuthError('google sign-in is not available on this device');
+    }
+  }
+
+  function handleAppleSignIn(){
+    if(isNativeApp&&window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SignInWithApple){
+      var rawNonce=Math.random().toString(36).substring(2,18)+Math.random().toString(36).substring(2,18);
+      crypto.subtle.digest('SHA-256',new TextEncoder().encode(rawNonce)).then(function(buf){
+        var hashedNonce=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+        return window.Capacitor.Plugins.SignInWithApple.authorize({scopes:'email name',state:rawNonce,nonce:hashedNonce});
+      }).then(function(result){
+        var cred=new firebase.auth.OAuthProvider('apple.com').credential({idToken:result.response.identityToken,rawNonce:rawNonce});
+        return firebase.auth().signInWithCredential(cred);
+      }).then(function(authResult){
+        finishAuthSession(authResult);
+      }).catch(function(e){
+        if(e.code===1001||e.message&&e.message.indexOf('1001')!==-1||e.userCancelled)return;
+        if(e.code==='auth/account-exists-with-different-credential'){
+          var errEmail=(e.customData&&e.customData.email)||authEmail||'';
+          if(errEmail){
+            checkExistingEmailAccount(errEmail,{forceLookup:true}).then(function(check){
+              setAuthError(check.exists?check.message:'Could not sign in. Try again or sign up with a new account.');
+            });
+          }else{
+            setAuthError('Could not sign in. Try again or use a different sign-in method.');
+          }
+          return;
+        }
+        setAuthError(e.message||'apple sign-in failed');
+      });
+    }else{
+      var p=new firebase.auth.OAuthProvider('apple.com');
+      firebase.auth().signInWithPopup(p).then(function(authResult){
+        finishAuthSession(authResult);
+      }).catch(function(e){
+        if(e.code==='auth/account-exists-with-different-credential'){
+          var errEmail=(e.customData&&e.customData.email)||authEmail||'';
+          if(errEmail){
+            checkExistingEmailAccount(errEmail,{forceLookup:true}).then(function(check){
+              setAuthError(check.exists?check.message:'Could not sign in. Try again or sign up with a new account.');
+            });
+          }else{
+            setAuthError('Could not sign in. Try again or use a different sign-in method.');
+          }
+          return;
+        }
+        setAuthError(e.message||'apple sign-in failed');
+      });
+    }
+  }
+
+  function handleEmailAuth(){
+    if(authMode==='signup'&&!authName.trim()){setAuthError('please enter your name');return;}
+    if(!authEmail||!authPass){setAuthError('please fill in both fields');return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail)){setAuthError('that email looks off');return;}
+    if(authPass.length<6){setAuthError('password must be at least 6 characters');return;}
+    var email=authEmail.trim().toLowerCase();
+    var handleErr=function(e){
+      if(e.code==='auth/email-already-in-use'||e.code==='auth/account-exists-with-different-credential'){
+        checkExistingEmailAccount(email,{knownExists:true}).then(function(check){
+          setAuthError(check.message);
+          setAuthMode('login');
+        }).catch(function(){
+          setAuthError(accountExistsMessage([]));
+          setAuthMode('login');
+        });
+        return;
+      }
+      var m=e.message||'something went wrong';
+      if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+        m='wrong password';
+      }else if(e.code==='auth/user-not-found'){
+        m='no account found — try signing up';
+      }else if(e.code==='auth/weak-password'){
+        m='password must be at least 6 characters';
+      }
+      setAuthError(m);
+    };
+    if(authMode==='signup'){
+      checkExistingEmailAccount(email,{forceLookup:true}).then(function(check){
+        if(check.exists){
+          setAuthError(check.message);
+          setAuthMode('login');
+          return;
+        }
+        var nm=authName.trim();
+        authIsNewUserRef.current=true;
+        firebase.auth().createUserWithEmailAndPassword(email,authPass).then(function(cred){
+          rcLogin(cred.user.uid);
+          return cred.user.updateProfile({displayName:nm});
+        }).then(function(){
+          setUserName(nm);
+          setShowAuth(false);
+          setAuthError('');
+        }).catch(handleErr);
+      }).catch(function(){
+        setAuthError('Could not verify email — check your connection and try again.');
+      });
+    }else{
+      authIsNewUserRef.current=false;
+      firebase.auth().signInWithEmailAndPassword(email,authPass).then(function(cred){
+        rcLogin(cred&&cred.user&&cred.user.uid);
+        setShowAuth(false);
+        setAuthError('');
+      }).catch(function(e){
+        if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'||e.code==='auth/user-not-found'||e.code==='auth/invalid-login-credentials'){
+          checkExistingEmailAccount(email,{forceLookup:true}).then(function(check){
+            if(check.lookupFailed){
+              setAuthError(e.code==='auth/user-not-found'||e.code==='auth/invalid-login-credentials'?'no account found — try signing up':'wrong password');
+              return;
+            }
+            if(check.exists&&check.methods.indexOf('password')<0){
+              setAuthError(check.message);
+            }else if(check.exists&&(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'||e.code==='auth/invalid-login-credentials')){
+              setAuthError('wrong password');
+            }else{
+              setAuthError('no account found — try signing up');
+            }
+          }).catch(function(){
+            setAuthError(e.code==='auth/user-not-found'||e.code==='auth/invalid-login-credentials'?'no account found — try signing up':'wrong password');
+          });
+        }else{
+          handleErr(e);
+        }
+      });
+    }
+  }
+
+  var authFromLandingRef=useRef(false);
+
+  function handleAuthBack(){
+    setShowAuth(false);
+    setShowPaywall(false);
+    setAuthError('');
+    if(authFromLandingRef.current){
+      authFromLandingRef.current=false;
+      setShowLanding(true);
+      return;
+    }
+    if(showOnboard&&obStep===8)return;
+    setShowOnboard(true);
+    setObStep(0);
+    setObSub(0);
+    setPersonalizationProfile(createEmptyPersonalizationProfile());
+    try{localStorage.removeItem('pfd_onboarded');}catch(e){}
+  }
+
   // Opens auth from landing page and pushes a history entry so browser back works
   function openAuthFromLanding(mode){
+    authFromLandingRef.current=true;
     history.pushState({fromLanding:true},'');
     setShowLanding(false);
     setShowAuth(true);
@@ -2298,9 +3283,9 @@ function App(){
   var _restoreState=useState('loading'),restoreState=_restoreState[0],setRestoreState=_restoreState[1];
   var _demoStep=useState(0),demoStep=_demoStep[0],setDemoStep=_demoStep[1];
 
-  // Start demo animation when reaching step 7
+  // Start demo animation when reaching step 8
   useEffect(function(){
-    if(obStep!==7)return;
+    if(obStep!==8)return;
     setDemoStep(0);
     var steps=[1200,2000,3000,4000,5000,6000,6800,7600,8200,8800,9400,10000,10600,11200,12000,12800,13600,14400,16000,17200,18400,20200];
     var timers=steps.map(function(t,i){return setTimeout(function(){setDemoStep(i+1);},t);});
@@ -2326,7 +3311,7 @@ function App(){
     // heroStep no longer used in hero — interval removed
   },[showLanding]);
   useEffect(function(){
-    var playing=showLanding||(showOnboard&&obStep===7);
+    var playing=showLanding||(showOnboard&&obStep===8);
     if(!playing)return;
     var durations=[1750,1600,1600,1750,1850,1850,1850,1950,1600,1750];
     var t=setTimeout(function(){setHeroPhone(function(p){return(p+1)%10;});},durations[heroPhone]||2500);
@@ -2334,10 +3319,10 @@ function App(){
   },[showLanding,showOnboard,obStep,heroPhone]);
   // Onboarding demo: restart the reel and lock continue until it finishes one full pass
   useEffect(function(){
-    if(showOnboard&&obStep===7){setHeroPhone(0);setDemoDone(false);}
+    if(showOnboard&&obStep===8){setHeroPhone(0);setDemoDone(false);}
   },[showOnboard,obStep]);
   useEffect(function(){
-    if(showOnboard&&obStep===7&&heroPhone===9){setDemoDone(true);}
+    if(showOnboard&&obStep===8&&heroPhone===9){setDemoDone(true);}
   },[showOnboard,obStep,heroPhone]);
   useEffect(function(){
     if(!showLanding)return;
@@ -2345,19 +3330,34 @@ function App(){
     return function(){clearInterval(t);};
   },[showLanding]);
 
-  // Auto-advance onboarding after sign-in at step 7
+  // Auto-advance wheel slide: title → body → wheel → pills → closing line
   useEffect(function(){
-    if(currentUser&&showOnboard&&obStep===7){setShowAuth(false);setObStep(8);setObSub(0);setObAnswers({});}
+    if(obStep!==4||obSub>=4)return;
+    var t=setTimeout(function(){setObSub(function(s){return s+1;});},obSub===0?850:750);
+    return function(){clearTimeout(t);};
+  },[obStep,obSub]);
+
+  // Auto-advance create → explore → learn → move → connect after first tap
+  useEffect(function(){
+    if(obStep!==1||obSub<1||obSub>=5)return;
+    var t=setTimeout(function(){setObSub(function(s){return s+1;});},obSub===4?800:650);
+    return function(){clearTimeout(t);};
+  },[obStep,obSub]);
+
+  // Auto-advance onboarding after sign-in at step 8
+  useEffect(function(){
+    if(currentUser&&showOnboard&&obStep===8){setShowAuth(false);setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());}
   },[currentUser]);
 
   // NOTE: ?subscribed=true URL param handling intentionally removed.
-  // isPro is set exclusively by stripe-webhook.js / revenuecat-webhook.js server-side.
+  // isPro in Firestore is set by revenuecat-webhook / stripe-webhook (Admin SDK).
+  // App checks RevenueCat on launch; Xcode simulate uses local dev flag only.
 
 
   // Browser back button → return to landing page
   useEffect(function(){
     function onPop(e){
-      if(e.state&&e.state.fromLanding){setShowAuth(false);setShowLanding(true);}
+      if(e.state&&e.state.fromLanding){authFromLandingRef.current=false;setShowAuth(false);setShowLanding(true);}
     }
     window.addEventListener('popstate',onPop);
     return function(){window.removeEventListener('popstate',onPop);};
@@ -2399,39 +3399,292 @@ function App(){
     return function(){clearTimeout(t);};
   },[]);
 
-  useEffect(function(){
-    if(!window.RCPurchases)return;
+  var RC_PRODUCT_IDS={monthly:'com.passionflowdaily.app.monthly',yearly:'com.passionflowdaily.app.yearly'};
+  var RC_ENTITLEMENT='Pro';
+  var rcConfigurePromise=null;
+
+  function getDeviceDiagLabel(){
+    var ua=navigator.userAgent||'';
+    var ios=ua.match(/OS (\d+[_\d]*) like Mac OS X/);
+    return ios?'iOS '+ios[1].replace(/_/g,'.'):'iOS version unknown';
+  }
+
+  function formatRcError(e){
+    if(!e)return 'Unknown StoreKit error';
+    if(e.userCancelled)return null;
+    var parts=[];
+    if(e.code)parts.push(String(e.code));
+    if(e.readableErrorCode&&e.readableErrorCode!==e.code)parts.push(String(e.readableErrorCode));
+    if(e.message)parts.push(String(e.message));
+    if(e.underlyingErrorMessage)parts.push('underlying: '+String(e.underlyingErrorMessage));
+    if(e.errorMessage&&e.errorMessage!==e.message)parts.push(String(e.errorMessage));
+    return parts.length?parts.join(' · '):String(e);
+  }
+
+  function logRcError(label,e){
+    var msg=formatRcError(e);
+    if(msg===null)return;
+    console.error('[RC] '+label,msg,e);
+  }
+
+  function rcStoreDiagnostics(){
+    var c=rcProductsCacheRef.current;
+    return {
+      monthlyProduct:!!c.products.monthly,
+      yearlyProduct:!!c.products.yearly,
+      monthlyPackage:!!c.packages.monthly,
+      yearlyPackage:!!c.packages.yearly,
+      ids:RC_PRODUCT_IDS.monthly+', '+RC_PRODUCT_IDS.yearly
+    };
+  }
+
+  function buildRcStoreDiagLabel(extra){
+    var d=rcStoreDiagnostics();
+    var bits=[
+      getDeviceDiagLabel(),
+      'monthly product: '+(d.monthlyProduct?'loaded':'missing'),
+      'yearly product: '+(d.yearlyProduct?'loaded':'missing'),
+      'monthly package: '+(d.monthlyPackage?'loaded':'missing'),
+      'yearly package: '+(d.yearlyPackage?'loaded':'missing')
+    ];
+    if(extra)bits.push(extra);
+    return bits.join(' · ');
+  }
+
+  function unwrapRcCustomerInfo(result){
+    return result&&(result.customerInfo||result)||null;
+  }
+
+  function rcHasPro(customerInfo){
+    var ci=unwrapRcCustomerInfo(customerInfo);
+    return !!(ci&&ci.entitlements&&ci.entitlements.active&&ci.entitlements.active[RC_ENTITLEMENT]);
+  }
+
+  function rcStoreProduct(item){
+    if(!item)return null;
+    return item.product||item.storeProduct||item;
+  }
+
+  function rcProductPriceString(item){
+    var p=rcStoreProduct(item);
+    if(!p)return null;
+    return p.priceString||p.localizedPriceString||null;
+  }
+
+  function rcProductPeriodLabel(item){
+    var p=rcStoreProduct(item);
+    if(!p)return '';
+    var sub=p.subscriptionPeriod||p.subscriptionPeriodUnit;
+    if(!sub)return '';
+    if(typeof sub==='string'){
+      if(sub.indexOf('Y')>=0||sub.indexOf('year')>=0)return '/year';
+      if(sub.indexOf('M')>=0||sub.indexOf('month')>=0)return '/month';
+    }
+    if(sub.unit==='YEAR'||(sub.value&&sub.unit==='YEAR'))return '/year';
+    if(sub.unit==='MONTH'||(sub.value&&sub.unit==='MONTH'))return '/month';
+    return '';
+  }
+
+  function configureRevenueCat(){
+    if(!window.RCPurchases)return Promise.resolve(false);
+    if(rcConfigurePromise)return rcConfigurePromise;
     var Purchases=window.RCPurchases.Purchases;
-    Purchases.configure({apiKey:'appl_oNdLWEumMbtVAlximyQWMVtNrPb'});
-    Purchases.getOfferings().then(function(o){setRcOfferings(o);}).catch(function(e){console.error('[RC] getOfferings',e);});
+    rcConfigurePromise=Promise.resolve(Purchases.configure({apiKey:'appl_oNdLWEumMbtVAlximyQWMVtNrPb'})).then(function(){
+      if(window.__PFD_DEBUG__&&window.RCPurchases&&window.RCPurchases.LOG_LEVEL){
+        return Purchases.setLogLevel({level:window.RCPurchases.LOG_LEVEL.DEBUG}).catch(function(){return true;});
+      }
+      return true;
+    }).then(function(){
+      return true;
+    }).catch(function(e){
+      logRcError('configure',e);
+      rcConfigurePromise=null;
+      return false;
+    });
+    return rcConfigurePromise;
+  }
+
+  function normalizeRcOfferings(result){
+    if(!result)return null;
+    if(result.offerings)return normalizeRcOfferings(result.offerings);
+    if(result.current!==undefined||result.all!==undefined)return result;
+    return null;
+  }
+
+  function getCurrentOffering(offerings){
+    if(!offerings)return null;
+    if(offerings.current)return offerings.current;
+    if(offerings.all){
+      var keys=Object.keys(offerings.all);
+      for(var i=0;i<keys.length;i++){
+        if(offerings.all[keys[i]])return offerings.all[keys[i]];
+      }
+    }
+    return null;
+  }
+
+  function findRcPackage(offerings,plan){
+    var cur=getCurrentOffering(offerings);
+    if(!cur)return null;
+    var targetId=plan==='yearly'?RC_PRODUCT_IDS.yearly:RC_PRODUCT_IDS.monthly;
+    var pkg=plan==='yearly'?cur.annual:cur.monthly;
+    if(pkg)return pkg;
+    if(!cur.availablePackages||!cur.availablePackages.length)return null;
+    var found=cur.availablePackages.find(function(p){
+      var pid=(p.product&&p.product.identifier)||(p.storeProduct&&p.storeProduct.identifier)||'';
+      return pid===targetId;
+    });
+    if(found)return found;
+    return cur.availablePackages.find(function(p){
+      var pt=String(p.packageType||p.identifier||'').toUpperCase();
+      if(plan==='yearly')return pt.indexOf('ANNUAL')>=0||pt.indexOf('YEAR')>=0;
+      return pt.indexOf('MONTH')>=0;
+    })||null;
+  }
+
+  function parseRcProducts(res){
+    if(!res)return [];
+    if(Array.isArray(res))return res;
+    if(res.products&&Array.isArray(res.products))return res.products;
+    return [];
+  }
+
+  function rcTargetFromCache(plan){
+    var c=rcProductsCacheRef.current;
+    if(plan==='yearly'){
+      if(c.packages.yearly)return {kind:'package',value:c.packages.yearly};
+      if(c.products.yearly)return {kind:'product',value:c.products.yearly};
+    }else{
+      if(c.packages.monthly)return {kind:'package',value:c.packages.monthly};
+      if(c.products.monthly)return {kind:'product',value:c.products.monthly};
+    }
+    return null;
+  }
+
+  function rcPlanProductId(plan){
+    return plan==='yearly'?RC_PRODUCT_IDS.yearly:RC_PRODUCT_IDS.monthly;
+  }
+
+  function executeRcPurchase(Purchases,target){
+    if(!target||!target.value){
+      throw new Error('StoreKit products are not loaded yet. '+buildRcStoreDiagLabel());
+    }
+    if(target.kind==='package'){
+      return Purchases.purchasePackage({aPackage:target.value});
+    }
+    return Purchases.purchaseStoreProduct({product:target.value});
+  }
+
+  function prefetchRcStore(retryCount){
+    if(!window.RCPurchases)return Promise.resolve(false);
+    retryCount=retryCount||0;
+    setRcStoreLoading(true);
+    var Purchases=window.RCPurchases.Purchases;
+    return configureRevenueCat().then(function(configured){
+      if(!configured){
+        setRcStoreReady(false);
+        setRcStoreDiag('RevenueCat configure failed');
+        setRcStoreLoading(false);
+        return false;
+      }
+      return Purchases.getOfferings().catch(function(e){
+        logRcError('getOfferings',e);
+        return null;
+      });
+    }).then(function(raw){
+      if(raw===false)return false;
+      var offerings=normalizeRcOfferings(raw);
+      if(offerings){
+        setRcOfferings(offerings);
+        rcProductsCacheRef.current.packages.monthly=findRcPackage(offerings,'monthly');
+        rcProductsCacheRef.current.packages.yearly=findRcPackage(offerings,'yearly');
+      }else{
+        console.warn('[RC] getOfferings returned no current offering');
+      }
+      return Purchases.getProducts({productIdentifiers:[RC_PRODUCT_IDS.monthly,RC_PRODUCT_IDS.yearly]}).catch(function(e){
+        logRcError('getProducts',e);
+        return {products:[]};
+      });
+    }).then(function(res){
+      if(res===false)return false;
+      parseRcProducts(res).forEach(function(p){
+        if(p.identifier===RC_PRODUCT_IDS.monthly)rcProductsCacheRef.current.products.monthly=p;
+        if(p.identifier===RC_PRODUCT_IDS.yearly)rcProductsCacheRef.current.products.yearly=p;
+      });
+      var c=rcProductsCacheRef.current;
+      var yearlyItem=c.packages.yearly||c.products.yearly;
+      var monthlyItem=c.packages.monthly||c.products.monthly;
+      setRcPrices({
+        yearly:rcProductPriceString(yearlyItem)?('Then '+rcProductPriceString(yearlyItem)+rcProductPeriodLabel(yearlyItem)):null,
+        monthly:rcProductPriceString(monthlyItem)?('Then '+rcProductPriceString(monthlyItem)+rcProductPeriodLabel(monthlyItem)):null
+      });
+      var ready=!!(c.packages.monthly||c.packages.yearly||c.products.monthly||c.products.yearly);
+      var diag=buildRcStoreDiagLabel(ready?'StoreKit ready':'StoreKit products missing');
+      setRcStoreDiag(diag);
+      console.log('[RC] prefetch',diag,rcStoreDiagnostics());
+      if(!ready&&retryCount<3){
+        return new Promise(function(r){setTimeout(r,1200);}).then(function(){return prefetchRcStore(retryCount+1);});
+      }
+      setRcStoreReady(ready);
+      setRcStoreLoading(false);
+      return ready;
+    }).catch(function(e){
+      logRcError('prefetch',e);
+      if(retryCount<3){
+        return new Promise(function(r){setTimeout(r,1200);}).then(function(){return prefetchRcStore(retryCount+1);});
+      }
+      setRcStoreReady(false);
+      setRcStoreDiag(buildRcStoreDiagLabel(formatRcError(e)));
+      setRcStoreLoading(false);
+      return false;
+    });
+  }
+
+  function resolveRcPurchaseTarget(plan){
+    var cached=rcTargetFromCache(plan);
+    if(cached)return Promise.resolve(cached);
+    return prefetchRcStore(0).then(function(){return rcTargetFromCache(plan);});
+  }
+
+  useEffect(function(){
+    if(window.RCPurchases&&isNativeApp)prefetchRcStore(0);
   },[]);
+
+  useEffect(function(){
+    if(showPaywall&&isNativeApp){
+      setPurchaseError('');
+      prefetchRcStore(0);
+    }
+  },[showPaywall]);
+
+  useEffect(function(){
+    if(currentUser&&userLoaded&&isPro){
+      setShowPaywall(false);
+      if(showOnboard&&obStep===9)return;
+      if(showOnboard)setShowOnboard(false);
+    }else if(currentUser&&userLoaded&&!isPro&&!showOnboard&&!showAuth&&!showSplash&&!showLanding){
+      if(shouldShowPaywallGate())setShowPaywall(true);
+      else routeToPersonalization();
+    }
+  },[currentUser,userLoaded,isPro,showOnboard,obStep,showAuth,showSplash,showLanding]);
+
+  useEffect(function(){
+    if(!currentUser||!userLoaded||!isPro||showOnboard||showPaywall||showAuth||showSplash||showLanding)return;
+    if(profileIsComplete(personalizationProfile)||personalizationProfile.skippedAt)return;
+    try{if(localStorage.getItem('pfd_profile_prompt_dismissed')==='1')return;}catch(e){}
+    var isExisting=(logsData&&logsData.length>0)||!!(obAnswers&&obAnswers.q1);
+    if(!isExisting)return;
+    setShowProfilePrompt(true);
+    trackEvent('profile_prompt_shown');
+  },[currentUser,userLoaded,isPro,personalizationProfile,showOnboard,showPaywall,showAuth,showSplash,showLanding,logsData,obAnswers]);
 
   var _tab=useState('flow'),mobileTab=_tab[0],setMobileTab=_tab[1];
   var _sk=useState(0),spinKey=_sk[0],setSpinKey=_sk[1];
   var _qi=useState(0),quoteIdx=_qi[0],setQuoteIdx=_qi[1];
-  var _cs=useState({}),cardStates=_cs[0],setCardStates=_cs[1];
-  var _si=useState({}),selectedIdeas=_si[0],setSelectedIdeas=_si[1];
-  var _ci=useState({}),customIdeas=_ci[0],setCustomIdeas=_ci[1];
-  var _sv=useState({}),savedIdeas=_sv[0],setSavedIdeas=_sv[1];
-  var _di=useState({}),deletedIdeas=_di[0],setDeletedIdeas=_di[1];
   var _dc=useState(null),deleteConfirm=_dc[0],setDeleteConfirm=_dc[1];
-  var _sf=useState([]),selectedFeelings=_sf[0],setSelectedFeelings=_sf[1];
-  var _fs=useState(null),flowScore=_fs[0],setFlowScore=_fs[1];
-  var _sat=useState(null),satisfaction=_sat[0],setSatisfaction=_sat[1];
-  var _ref=useState(''),reflection=_ref[0],setReflection=_ref[1];
-  var _rs=useState(false),reflectionSaved=_rs[0],setReflectionSaved=_rs[1];
   var _vm=useState(false),isRecording=_vm[0],setIsRecording=_vm[1];
-  var _vms=useState(false),hasVoiceMemo=_vms[0],setHasVoiceMemo=_vms[1];
-  var _str=useState(7),streak=_str[0],setStreak=_str[1];
-  var _sess=useState(function(){var s={};CARDS.forEach(function(c){s[c.id]=c.sessions;});return s;}),sessions=_sess[0],setSessions=_sess[1];
-  var _rh=useState([]),recentHistory=_rh[0],setRecentHistory=_rh[1];
-  var _rds=useState([]),removedDummySaved=_rds[0],setRemovedDummySaved=_rds[1];
-  var _logs=useState([]),logsData=_logs[0],setLogsData=_logs[1];
-  var _isPro=useState(false),isPro=_isPro[0],setIsPro=_isPro[1];
-  var _pricePlan=useState('monthly'),pricePlan=_pricePlan[0],setPricePlan=_pricePlan[1];
+  var _pricePlan=useState('yearly'),pricePlan=_pricePlan[0],setPricePlan=_pricePlan[1];
   var _op=useState(null),openCard=_op[0],setOpenCard=_op[1];
-  var _uname=useState('Megan'),userName=_uname[0],setUserName=_uname[1];
-  var _reminder=useState('8:00 AM'),reminderTime=_reminder[0],setReminderTime=_reminder[1];
   var _ov=useState(false),showOverlay=_ov[0],setShowOverlay=_ov[1];
   var _ovType=useState('basic'),overlayType=_ovType[0],setOverlayType=_ovType[1];
   var _ovFade=useState(false),overlayFading=_ovFade[0],setOverlayFading=_ovFade[1];
@@ -2511,13 +3764,15 @@ function App(){
         }
         return current;
       });
+      persistNow();
     },0);
   },[cardStates]);
 
-  var startThis=useCallback(function(cid){setCardStates(function(p){var o=Object.assign({},p);o[cid]='active';return o;});},[]);
+  var startThis=useCallback(function(cid){setCardStates(function(p){var o=Object.assign({},p);o[cid]='active';return o;});setTimeout(persistNow,50);},[]);
   var completeCat=useCallback(function(cid){
     setCardStates(function(p){var o=Object.assign({},p);o[cid]='completed';return o;});
     setSessions(function(p){var o=Object.assign({},p);o[cid]=(p[cid]||0)+1;return o;});
+    setTimeout(persistNow,50);
   },[]);
   var addCustom=useCallback(function(cid,idea){
     setCustomIdeas(function(p){var o=Object.assign({},p);o[cid]=[idea].concat(p[cid]||[]);return o;});
@@ -2530,6 +3785,8 @@ function App(){
   var AFFIRMATIONS=['you showed up for yourself today.','this is how your life changes.','small steps, big life.','balance looks beautiful on you.','you chose yourself today.'];
   var handleCompleteDay=function(type){
     var newRecent=[];var td=today.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    var alreadyClosedToday=logsData.some(function(log){return log.date===td;});
+    var newStreak=alreadyClosedToday?streak:streak+1;
     var logActivities={};
     CARDS.forEach(function(c){
       var ideas=selectedIdeas[c.id]||[];
@@ -2537,7 +3794,7 @@ function App(){
       if(ideas.length>0)logActivities[c.id]=ideas.join(', ');
     });
     if(newRecent.length>0)setRecentHistory(function(prev){return newRecent.concat(prev).slice(0,10);});
-    setStreak(function(p){return p+1;});
+    setStreak(newStreak);
     if(type==='reflection')setReflectionSaved(true);
 
     // Save to logs
@@ -2558,11 +3815,13 @@ function App(){
       var uid=currentUser.uid;
       window.db.collection('users').doc(uid).set({
         logsData:newLogsData,
-        streak:streak+1,
+        streak:newStreak,
         recentHistory:newRecent.length>0?newRecent.concat(recentHistory).slice(0,10):recentHistory,
         updatedAt:Date.now()
       },{merge:true}).catch(function(e){console.error('[firestore] closeDay save failed',e);});
     }
+    trackEvent('day_closed',{type:type||'basic',streak:newStreak,already_closed_today:alreadyClosedToday});
+    if(type==='reflection')trackEvent('reflection_completed');
     setOverlayType(type||'basic');
     setShowOverlay(true);
     setOverlayFading(false);
@@ -2622,6 +3881,17 @@ function App(){
         <div className="py-1">
           <FlowWheel cardStates={cardStates} spinKey={spinKey} onOpen={function(id){setOpenCard(id);}}/>
         </div>
+
+        {/* Plan my day */}
+        <button onClick={function(){gateDeepPersonalization('plan');}} className="w-full mb-3 rounded-[18px] px-4 py-3.5 flex items-center gap-3 text-left active:scale-[0.99] transition-all"
+          style={{background:'white',border:'1px solid #C49A7A',boxShadow:'0 0 18px rgba(196,154,122,0.12), 0 2px 8px rgba(0,0,0,0.03)'}}>
+          <div className="w-[44px] h-[44px] rounded-full flex items-center justify-center flex-shrink-0 text-[20px]" style={{background:'rgba(196,154,122,0.12)'}}>{'📋'}</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-serif text-[16px] text-headline italic">Plan my day</p>
+            <p className="font-sans text-[11px] text-body opacity-45">One idea for each area — picked for you</p>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#C49A7A" strokeWidth="1.5" strokeLinecap="round"><path d="M5 2l5 5-5 5"/></svg>
+        </button>
 
         {/* Progress steps */}
         <div className="flex items-center justify-center gap-1 mb-3 px-2">
@@ -2917,7 +4187,16 @@ function App(){
 
         {/* Preferences */}
         <div className="sc mb-4">
-          <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Preferences</p>
+          <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Personalization</p>
+          <p className="font-sans text-[11px] text-body opacity-50 mb-3 leading-relaxed">Tune what Passion Flow suggests for you. You can change this anytime.</p>
+          {renderPersonalizationFields(false)}
+          {profileSavedMsg&&<p className="font-sans text-[12px] text-accent text-center mt-2">{profileSavedMsg}</p>}
+          <button onClick={savePersonalizationFromSettings} className="w-full font-sans text-[13px] font-semibold text-white py-3 rounded-full mt-4 active:scale-[0.98]" style={{background:'#C49A7A'}}>Save personalization</button>
+        </div>
+
+        {/* Preferences */}
+        <div className="sc mb-4">
+          <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Reminders</p>
           <div className="mb-3">
             <div className="flex items-center gap-2 mb-1">
               <label className="font-sans text-[10px] text-body opacity-45">daily reminder</label>
@@ -3015,56 +4294,7 @@ function App(){
         </div>
       </div>}
 
-      {/* Share overlay */}
-      {shareLog&&<div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(0,0,0,0.4)'}} onClick={function(e){if(e.target===e.currentTarget)setShareLog(null);}}>
-        <div className="w-[320px] rounded-[24px] overflow-hidden fade-in" style={{boxShadow:'0 8px 40px rgba(0,0,0,0.15)'}}>
-          {/* Share card preview */}
-          <div id="share-card-capture" className="px-6 py-6" style={{background:'linear-gradient(160deg, #FCE4EC 0%, #FAF6F2 40%, #EDE6F6 70%, #E0F2E9 100%)'}}>
-            <p className="font-sans text-[9px] text-body opacity-40 uppercase tracking-[0.15em] mb-2">Passion Flow Daily</p>
-            <p className="font-serif text-[20px] text-headline italic leading-snug mb-4">{shareLog.date}</p>
-
-            <div className="space-y-2.5 mb-4">
-              {CARDS.map(function(c){var act=shareLog.activities[c.id];if(!act)return null;return <div key={c.id} className="flex items-start gap-2.5 px-3 py-2 rounded-[12px]" style={{background:'rgba(255,255,255,0.6)',border:'1px solid '+c.borderColor}}>
-                <span className="text-[15px] mt-0.5">{c.emoji}</span>
-                <div className="flex-1"><p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-body opacity-40">{c.title}</p><p className="font-sans text-[12px] text-headline leading-snug">{act}</p></div>
-              </div>;})}
-            </div>
-
-            <div className="flex items-center gap-3 mb-3">
-              <p className="font-sans text-[11px] text-body opacity-50">flow: {shareLog.flow}/10 {shareLog.flow<=3?'\uD83D\uDCA8':shareLog.flow<=7?'\uD83C\uDFAF':'\uD83D\uDE80'}</p>
-              {shareLog.balance&&<p className="font-sans text-[11px] text-accent opacity-55">{shareLog.balance==='yes'?'\u2728 balanced':shareLog.balance==='getting-there'?'\uD83D\uDE0C getting there':'\uD83D\uDE15 not quite'}</p>}
-            </div>
-
-            {shareLog.feelings&&shareLog.feelings.length>0&&<div className="flex flex-wrap gap-1 mb-3">{shareLog.feelings.map(function(f){var fe=FEELINGS.find(function(x){return x.label===f;});return <span key={f} className="font-sans text-[9px] text-accent bg-white/60 px-2 py-0.5 rounded-full">{fe?fe.emoji:''} {f}</span>;})}</div>}
-
-            {shareLog.reflection&&<p className="font-serif text-[12px] text-body italic opacity-55 mb-4">"{shareLog.reflection}"</p>}
-            <div className="flex items-center justify-between pt-3" style={{borderTop:'1px solid rgba(0,0,0,0.06)'}}>
-              <span className="font-sans text-[8px] text-body opacity-30 uppercase tracking-[0.15em]">Passion Flow Daily</span>
-              <span className="font-serif text-[9px] text-accent italic opacity-60">passionflowdaily.com</span>
-            </div>
-          </div>
-
-          {/* Share options */}
-          <div className="bg-white px-6 py-4">
-            <p className="font-sans text-[11px] text-body opacity-40 mb-3">share this moment</p>
-            <div className="flex items-center gap-3">
-              <button onClick={function(){handleSaveShareImage(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 2v10M5 8l4 5 4-5M3 15h12"/></svg>
-                <span className="font-sans text-[9px] text-headline font-medium">Save Image</span>
-              </button>
-              <button onClick={function(){handleShareText(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 14c0 1.1.9 2 2 2h10a2 2 0 002-2V6.8a2 2 0 00-.6-1.4l-3.8-3.8A2 2 0 0010.2 1H4a2 2 0 00-2 2v11z"/><path d="M6 9l3 3 3-3"/></svg>
-                <span className="font-sans text-[9px] text-headline font-medium">iMessage</span>
-              </button>
-              <button onClick={function(){handleShareText(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="14" height="14" rx="4"/><circle cx="9" cy="9" r="3.5"/><circle cx="13.5" cy="4.5" r="0.5" fill="#614433"/></svg>
-                <span className="font-sans text-[9px] text-headline font-medium">IG Story</span>
-              </button>
-            </div>
-            <button onClick={function(){setShareLog(null);}} className="w-full font-sans text-[11px] text-body opacity-40 mt-3 text-center">cancel</button>
-          </div>
-        </div>
-      </div>}
+      {/* Share overlay lives in shared section below */}
 
       {/* Saved confirmation */}
       {showSavedMsg&&<div className="fixed bottom-24 left-0 right-0 z-50 flex flex-col items-center gap-2 fade-in">
@@ -3371,9 +4601,18 @@ function App(){
                   </div>
                 </div>
 
+                {/* Personalization */}
+                <div className="sc">
+                  <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Personalization</p>
+                  <p className="font-sans text-[11px] text-body opacity-50 mb-3 leading-relaxed">Tune what Passion Flow suggests for you.</p>
+                  {renderPersonalizationFields(false)}
+                  {profileSavedMsg&&<p className="font-sans text-[12px] text-accent text-center mt-2">{profileSavedMsg}</p>}
+                  <button onClick={savePersonalizationFromSettings} className="w-full font-sans text-[13px] font-semibold text-white py-3 rounded-full mt-4 active:scale-[0.98]" style={{background:'#C49A7A'}}>Save personalization</button>
+                </div>
+
                 {/* Preferences */}
                 <div className="sc">
-                  <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Preferences</p>
+                  <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-3">Reminders</p>
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-1">
                       <label className="font-sans text-[10px] text-body opacity-45">daily reminder</label>
@@ -4447,7 +5686,7 @@ function App(){
         </div>
 
         {/* Tagline */}
-        <p className="splash-tag font-serif text-[14px] md:text-[18px] text-headline italic opacity-60 mt-6">one meaningful idea, one wheel at a time.</p>
+        <p className="splash-tag font-serif text-[14px] md:text-[18px] text-headline italic opacity-60 mt-6">one meaningful idea, every part of your life.</p>
       </div>;
     })()}
 
@@ -4458,58 +5697,78 @@ function App(){
 
         {/* Screen 1 — Hook */}
         {obStep===0&&<div>
-          <p className="ob-fade-up font-sans text-[28px] md:text-[38px] text-headline leading-[1.2] mb-8 font-medium">you shouldn't have to<br/>wonder <span className="font-serif italic font-bold text-accent" style={{fontSize:'110%'}}>what to do</span><br/>every day.</p>
-          <p className="ob-fade-up font-sans text-[16px] md:text-[19px] text-headline leading-relaxed font-medium" style={{animationDelay:'1s'}}>your life isn't supposed<br/>to feel this <span className="font-serif italic text-accent" style={{fontSize:'115%'}}>scattered.</span></p>
-          <button onClick={function(){setObStep(1);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.6s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>continue</button>
+          <p className="ob-cinematic font-sans text-[28px] md:text-[38px] text-headline leading-[1.2] mb-8 font-medium">Life wasn't meant to<br/><span className="font-serif italic text-accent">feel this repetitive.</span></p>
+          <p className="ob-cinematic font-sans text-[24px] md:text-[32px] text-headline leading-[1.3] mb-6 font-medium" style={{animationDelay:'0.85s'}}><span className="block whitespace-nowrap">Somewhere along the way,</span><span className="block whitespace-nowrap">you stopped feeling</span><span className="block whitespace-nowrap">excited <span className="font-serif italic text-accent">by your own life.</span></span></p>
+          <button onClick={function(){setObStep(1);setObSub(0);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.7s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>continue</button>
         </div>}
 
-        {/* Screen 2 — Relate + Pain (tap-through, one line at a time) */}
+        {/* Screen 2 — Multi-passionate (tap once, then auto-reveal) */}
         {obStep===1&&<div>
-          {obSub>=0&&<p className="ob-blur-in font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-5 font-medium">you focus on <span className="font-serif italic font-bold text-accent">one thing...</span></p>}
-          {obSub>=1&&<p className="ob-blur-in font-sans text-[18px] md:text-[22px] text-headline leading-relaxed font-medium mb-6">and everything else gets <span className="font-serif italic font-semibold text-accent">ignored.</span></p>}
-          {obSub>=2&&<p className="ob-blur-in font-sans text-[18px] md:text-[22px] text-headline leading-relaxed font-medium mb-6">so even when you're busy,<br/><span className="font-serif italic font-semibold text-accent">life still feels off.</span></p>}
-          {obSub<2?<button onClick={function(){setObSub(obSub+1);}} className="font-sans text-[12px] text-accent opacity-50 mt-10 underline underline-offset-4">tap to continue</button>
-          :<button onClick={function(){setObStep(2);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'0.5s',background:'#C49A7A'}}>continue</button>}
+          {obSub>=0&&<p className="ob-blur-in font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-5 font-medium">You were meant to <span className="font-serif italic font-bold text-accent">create.</span></p>}
+          {obSub>=1&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-5" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">explore.</span></p>}
+          {obSub>=2&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-5" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">learn.</span></p>}
+          {obSub>=3&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-5" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">move.</span></p>}
+          {obSub>=4&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-6" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">connect.</span></p>}
+          {obSub>=5&&<p className="ob-blur-in font-sans text-[18px] md:text-[22px] text-headline leading-relaxed font-medium mb-6" style={{animationDelay:'0.1s'}}>Not become just <span className="font-serif italic font-semibold text-accent">one thing.</span></p>}
+          {obSub===0?<button onClick={function(){setObSub(1);}} className="font-sans text-[12px] text-accent opacity-50 mt-10 underline underline-offset-4">tap to continue</button>
+          :obSub>=5?<button onClick={function(){setObStep(2);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'0.5s',background:'#C49A7A'}}>continue</button>
+          :null}
         </div>}
 
-        {/* Screen 3 — Shift */}
+        {/* Screen 3 — Waiting */}
         {obStep===2&&<div>
-          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">the problem isn't <span className="font-serif italic text-body opacity-50">motivation.</span></p>
-          <p className="ob-fade-up font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>it's not knowing<br/>what <span className="font-serif italic font-bold text-accent" style={{fontSize:'115%'}}>matters today.</span></p>
-          <button onClick={function(){setObStep(3);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">You keep waiting<br/>to feel <span className="font-serif italic font-bold text-accent">alive again.</span></p>
+          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>But someday<br/>never seems to come.</p>
+          <button onClick={function(){setObStep(3);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
         </div>}
 
-        {/* Screen 4 — Wheel */}
+        {/* Screen 4 — Shift */}
         {obStep===3&&<div>
-          <p className="ob-fade-up font-sans text-[22px] md:text-[28px] text-headline font-medium mb-2">your life has <span className="font-serif italic text-accent">5 parts.</span></p>
-          <p className="ob-fade-up font-sans text-[13px] md:text-[14px] text-body opacity-50 leading-relaxed mb-5" style={{animationDelay:'0.4s'}}>when one is off, everything feels off.</p>
-          <div className="flex justify-center mb-4">
-            <div className="ob-fade-up breathe" style={{animationDelay:'0.8s',width:260,height:260}}>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">The problem isn't <span className="font-serif italic text-body opacity-50">motivation.</span></p>
+          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>It's forgetting<br/>to live <span className="font-serif italic font-bold text-accent">fully.</span></p>
+          <button onClick={function(){setObStep(4);setObSub(0);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+        </div>}
+
+        {/* Screen 5 — Wheel (sequential reveal) */}
+        {obStep===4&&<div>
+          {obSub>=0&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline font-medium mb-2">Your life has <span className="font-serif italic text-accent">five parts.</span></p>}
+          {obSub>=1&&<p className="ob-blur-in font-sans text-[15px] md:text-[17px] text-body opacity-55 leading-relaxed mb-4">When one gets ignored,<br/>everything feels a little off.</p>}
+          {obSub>=2&&<div className="flex justify-center mb-4">
+            <div className="ob-blur-in wheel-glow breathe" style={{width:260,height:260}}>
               <FlowWheel size={260} cardStates={{}} onOpen={function(){}}/>
             </div>
-          </div>
-          <div className="flex flex-wrap justify-center gap-1.5 mb-5">
-            {CARDS.map(function(c,i){return <span key={c.id} className="ob-word-in font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{animationDelay:(1.2+i*0.25)+'s',background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;})}
-          </div>
-          <p className="ob-fade-up font-sans text-[14px] md:text-[16px] text-headline font-medium" style={{animationDelay:'2.6s'}}>when they're in sync, life feels <span className="font-serif italic font-bold text-accent">clear.</span></p>
-          <button onClick={function(){setObStep(4);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-8 active:scale-[0.97]" style={{animationDelay:'3.2s',background:'#C49A7A'}}>continue</button>
+          </div>}
+          {obSub>=3&&<div className="ob-blur-in flex flex-col items-center gap-1.5 mb-4">
+            <div className="flex flex-wrap justify-center gap-1.5">
+              {CARDS.slice(0,3).map(function(c){return <span key={c.id} className="font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;})}
+            </div>
+            <div className="flex flex-wrap justify-center gap-1.5">
+              {CARDS.slice(3,5).map(function(c){return <span key={c.id} className="font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;})}
+            </div>
+          </div>}
+          {obSub>=4&&<p className="ob-blur-in font-sans text-[15px] md:text-[17px] text-body opacity-55 leading-relaxed mb-5">When they work together...<br/>life feels <span className="font-serif italic font-bold text-accent">alive again.</span></p>}
+          {obSub>=4&&<button onClick={function(){setObStep(5);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-8 active:scale-[0.97]" style={{animationDelay:'0.3s',background:'#C49A7A'}}>continue</button>}
         </div>}
 
-        {/* Screen 5 — Core Promise */}
-        {obStep===4&&<div>
-          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">you don't have<br/>to do <span className="font-serif italic text-body opacity-50">everything.</span><br/>just don't <span className="font-serif italic font-bold text-accent">ignore</span><br/>everything else.</p>
-          <button onClick={function(){setObStep(5);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
-        </div>}
-
-        {/* Screen 6 — Product */}
+        {/* Screen 6 — One step */}
         {obStep===5&&<div>
-          <p className="ob-fade-up font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">this helps you<br/>find your <span className="font-serif italic font-bold text-accent">direction.</span></p>
-          <p className="ob-fade-up font-serif text-[18px] md:text-[22px] text-body italic opacity-70" style={{animationDelay:'0.9s'}}>one meaningful idea,<br/>one wheel at a time.</p>
-          <button onClick={function(){setObStep(6);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">You don't have<br/>to do <span className="font-serif italic text-accent">everything.</span></p>
+          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>Just take one<br/>meaningful step <span className="font-serif italic text-accent">today.</span></p>
+          <button onClick={function(){setObStep(6);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
         </div>}
 
-        {/* Screen 7 — How It Works (3 cards with visuals) */}
+        {/* Screen 7 — Product */}
         {obStep===6&&<div>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">That's what<br/><span className="font-serif italic text-accent">Passion Flow Daily</span> is.</p>
+          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70 mb-2" style={{animationDelay:'0.6s'}}>One meaningful idea.</p>
+          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70 mb-2" style={{animationDelay:'0.85s'}}>Every part of your life.</p>
+          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70 mb-2" style={{animationDelay:'1.1s'}}>One wheel at a time.</p>
+          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70" style={{animationDelay:'1.35s'}}>Everyday.</p>
+          <button onClick={function(){setObStep(7);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+        </div>}
+
+        {/* Screen 8 — How It Works (3 cards with visuals) */}
+        {obStep===7&&<div>
           <p className="ob-fade-up font-serif text-[22px] md:text-[26px] text-headline italic mb-6">how it works</p>
 
           <div className="space-y-3 text-left max-w-[340px] mx-auto mb-6">
@@ -4562,11 +5821,11 @@ function App(){
             </div>
           </div>
 
-          <button onClick={function(){setObStep(7);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{animationDelay:'1.3s',background:'#C49A7A'}}>See it in action →</button>
+          <button onClick={function(){setObStep(8);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{animationDelay:'1.3s',background:'#C49A7A'}}>See it in action →</button>
         </div>}
 
-        {/* Screen 8 — Demo Video */}
-        {obStep===7&&(function(){
+        {/* Screen 9 — Demo Video */}
+        {obStep===8&&(function(){
           var slices=[
             {label:'Create',emoji:'✨',color:'#FCE4EC',border:'#F0B8C8',check:'#E890A8',benefit:'build your future & create for fun'},
             {label:'Mindset',emoji:'📚',color:'#FDEBD0',border:'#F0D0A0',check:'#E8BA78',benefit:'grow your mind with intention'},
@@ -4576,8 +5835,9 @@ function App(){
           ];
           return <div className="text-center">
           <div className="mb-4">
-            <p className="ob-fade-up font-sans text-[22px] md:text-[26px] text-headline font-medium mb-1">Start your day with<br/>one <span className="font-serif italic text-accent">meaningful idea.</span></p>
-            <p className="ob-fade-up font-serif text-[13px] text-body opacity-55 italic" style={{animationDelay:'0.3s'}}>Spin. Choose. Go.</p>
+            <p className="ob-cinematic font-sans text-[22px] md:text-[26px] text-headline font-medium mb-1">Become someone<br/>who lives <span className="font-serif italic text-accent">fully.</span></p>
+            <p className="ob-cinematic font-serif text-[13px] text-body opacity-55 italic mb-0.5" style={{animationDelay:'0.3s'}}>Start your day with one meaningful idea.</p>
+            <p className="ob-cinematic font-serif text-[13px] text-body opacity-55 italic" style={{animationDelay:'0.5s'}}>Spin. Choose. Go.</p>
           </div>
           <div style={{marginBottom:16,display:'flex',justifyContent:'center'}}>
           <div style={{position:'relative',width:256,flexShrink:0,margin:'0 auto'}}>
@@ -5032,46 +6292,62 @@ function App(){
           </div>
 
           </div>
-          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else{setObStep(8);}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
+          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else{setObStep(9);}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
           </div>;
         })()}
 
-        {/* Screen 9 — Personalization */}
-        {obStep===8&&<div>
-          <p className="ob-fade-up font-serif text-[22px] md:text-[26px] text-headline italic mb-6">let's personalize your flow</p>
-
-          {obSub===0&&<div className="ob-fade-up" style={{animationDelay:'0.3s'}}>
-            <p className="font-sans text-[13px] text-body opacity-50 mb-4">What feels most out of balance lately?</p>
-            <div className="flex flex-col items-stretch gap-2 max-w-[300px] mx-auto">
-              {['Creativity','Energy','Relationships','Mindset','Rest'].map(function(o){var sel=obAnswers.q1===o;return <button key={o} onClick={function(){setObAnswers(Object.assign({},obAnswers,{q1:o}));setTimeout(function(){setObSub(1);},300);}} className="font-sans text-[13px] px-5 py-2.5 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.06)',color:sel?'#C49A7A':'#614433'}}>{o}</button>;})}
+        {/* Screen 10 — Personalization Layer 1 (3 screens) */}
+        {obStep===9&&<div>
+          {obSub===0&&<div className="ob-fade-up">
+            <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2">What matters most right now? ✨</p>
+            <p className="font-sans text-[13px] text-body opacity-50 mb-5 max-w-[320px] mx-auto">Pick up to 4 — we'll tailor your daily ideas.</p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-[340px] mx-auto mb-6">
+              {OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(personalizationProfile.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleOverallGoal(opt.id);}} className="font-sans text-[12px] px-4 py-2 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}
             </div>
+            <button onClick={function(){setObSub(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
+            <button onClick={function(){setObSub(1);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip for now</button>
           </div>}
 
           {obSub===1&&<div className="ob-fade-up">
-            <p className="font-sans text-[13px] text-body opacity-50 mb-4">What do you wish happened more often?</p>
-            <div className="flex flex-col items-stretch gap-2 max-w-[300px] mx-auto">
-              {['I felt inspired','I knew what to do','I followed through','I had more balance'].map(function(o){var sel=obAnswers.q2===o;return <button key={o} onClick={function(){setObAnswers(Object.assign({},obAnswers,{q2:o}));setTimeout(function(){setObSub(2);},300);}} className="font-sans text-[13px] px-5 py-2.5 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.06)',color:sel?'#C49A7A':'#614433'}}>{o}</button>;})}
+            <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2">What's getting in the way?</p>
+            <p className="font-sans text-[13px] text-body opacity-50 mb-5 max-w-[320px] mx-auto">Pick up to 2 — this helps us suggest ideas that actually fit.</p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-[340px] mx-auto mb-6">
+              {CORE_FRICTION_OPTIONS.map(function(opt){var sel=(personalizationProfile.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[11px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}
             </div>
+            <button onClick={function(){setObSub(2);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
+            <button onClick={function(){setObSub(2);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip for now</button>
           </div>}
 
           {obSub===2&&<div className="ob-fade-up">
-            <p className="font-sans text-[13px] text-body opacity-50 mb-4">What are you hoping to build?</p>
-            <div className="flex flex-col items-stretch gap-2 max-w-[300px] mx-auto">
-              {['More balance','More consistency','More creativity','More presence'].map(function(o){var sel=obAnswers.q3===o;return <button key={o} onClick={function(){setObAnswers(Object.assign({},obAnswers,{q3:o}));setTimeout(function(){setObStep(9);setObBuilding(true);setTimeout(function(){setObBuilding(false);setObStep(10);setObDone(true);},2200);},300);}} className="font-sans text-[13px] px-5 py-2.5 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.06)',color:sel?'#C49A7A':'#614433'}}>{o}</button>;})}
+            <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2">Your day, your context</p>
+            <p className="font-sans text-[13px] text-body opacity-50 mb-4 max-w-[320px] mx-auto">Helps us match ideas to your real life.</p>
+            <div className="max-w-[340px] mx-auto text-left space-y-4 mb-6">
+              <div>
+                <p className="font-sans text-[11px] text-body opacity-45 mb-2">Life context</p>
+                <div className="flex flex-wrap gap-2">{LIFE_CONTEXT_OPTIONS.map(function(opt){var sel=(personalizationProfile.lifeContext||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('lifeContext',opt.id,3);}} className="font-sans text-[11px] px-3 py-2 rounded-full border" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}</div>
+              </div>
+              <div>
+                <p className="font-sans text-[11px] text-body opacity-45 mb-2">Day bandwidth</p>
+                <div className="flex flex-col gap-1.5">{DAY_BANDWIDTH_OPTIONS.map(function(opt){var sel=personalizationProfile.dayBandwidth===opt.id;return <button key={opt.id} onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{dayBandwidth:opt.id});});}} className="font-sans text-[11px] px-3 py-2 rounded-[12px] border text-left" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}</div>
+              </div>
+              <div>
+                <p className="font-sans text-[11px] text-body opacity-45 mb-2">Default time you usually have</p>
+                <div className="flex flex-wrap gap-2">{TIME_BUCKET_OPTIONS.map(function(opt){var sel=personalizationProfile.defaultTimeBucket===opt.id;return <button key={opt.id} onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{defaultTimeBucket:opt.id});});}} className="font-sans text-[12px] px-3 py-2 rounded-full border" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}</div>
+              </div>
             </div>
+            <button onClick={function(){finishPersonalizationFlow(personalizationProfile,false);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Save & continue</button>
+            <button onClick={function(){finishPersonalizationFlow(personalizationProfile,true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip for now</button>
           </div>}
 
-          {/* Progress dots */}
           <div className="flex justify-center gap-2 mt-8">
-            {[0,1,2].map(function(i){return <div key={i} className="w-[8px] h-[8px] rounded-full transition-all duration-300" style={{background:i<=obSub?'#C49A7A':'rgba(0,0,0,0.08)'}}/>;
-            })}
+            {[0,1,2].map(function(i){return <div key={i} className="w-[8px] h-[8px] rounded-full transition-all duration-300" style={{background:i<=obSub?'#C49A7A':'rgba(0,0,0,0.08)'}}/>;})}
           </div>
         </div>}
 
-        {/* Screen 10 — Loading */}
-        {obStep===9&&<div>
-          <p className="ob-fade-up font-serif text-[22px] md:text-[26px] text-headline italic mb-3">setting up your flow...</p>
-          <p className="ob-fade-up font-sans text-[13px] text-body opacity-50 mb-8" style={{animationDelay:'0.3s'}}>personalizing your day</p>
+        {/* Screen 11 — Loading */}
+        {obStep===10&&<div>
+          <p className="ob-cinematic font-serif text-[22px] md:text-[26px] text-headline italic mb-3">Setting up your Flow...</p>
+          <p className="ob-cinematic font-sans text-[13px] text-body opacity-50 mb-8" style={{animationDelay:'0.3s'}}>Creating your first Daily Flow...</p>
           <div className="w-[220px] h-[6px] rounded-full mx-auto overflow-hidden mb-8" style={{background:'rgba(196,154,122,0.15)'}}>
             <div className="h-full rounded-full" style={{background:'#C49A7A',animation:'obProgress 2s ease forwards'}}/>
           </div>
@@ -5082,11 +6358,11 @@ function App(){
           </div>
         </div>}
 
-        {/* Screen 11 — Final */}
-        {obStep===10&&<div>
-          <p className="text-[36px] ob-fade-up mb-3">{'\u2728'}</p>
-          <p className="ob-fade-up font-sans text-[26px] md:text-[32px] text-headline leading-[1.2] font-medium mb-3" style={{animationDelay:'0.3s'}}>Tomorrow starts <span className="font-serif italic font-bold text-accent">differently.</span></p>
-          <p className="ob-fade-up font-serif text-[15px] md:text-[17px] text-body italic opacity-65 mb-6" style={{animationDelay:'0.8s'}}>You'll never have to wonder what to do today again.</p>
+        {/* Screen 12 — Final */}
+        {obStep===11&&<div>
+          <p className="text-[36px] ob-cinematic mb-3">{'\u2728'}</p>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[32px] text-headline leading-[1.2] font-medium mb-3" style={{animationDelay:'0.3s'}}>Tomorrow starts <span className="font-serif italic font-bold text-accent">differently.</span></p>
+          <p className="ob-cinematic font-serif text-[15px] md:text-[17px] text-body italic opacity-65 mb-6" style={{animationDelay:'0.8s'}}>You'll never have to wonder<br/>how to make today meaningful again.</p>
 
           {/* Wheel — fully formed, glowing */}
           <div className="flex justify-center mb-7">
@@ -5095,33 +6371,34 @@ function App(){
             </div>
           </div>
 
-          <button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowPaywall(true);}} className="ob-fade-up font-sans text-[14px] font-semibold text-white px-10 py-3.5 rounded-full active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Start my daily flow</button>
+          <button onClick={function(){localStorage.setItem('pfd_onboarded','1');if(isPro){setShowOnboard(false);}else{setShowPaywall(true);}}} className="ob-fade-up font-sans text-[14px] font-semibold text-white px-10 py-3.5 rounded-full active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>{isPro?'Start my daily flow':'Start my daily flow'}</button>
         </div>}
 
       </div>
 
       {/* Skip */}
-      {obStep<10&&<button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowOnboard(false);setShowAuth(true);setAuthMode('signup');}} className="fixed top-14 right-4 z-[200] font-sans text-[11px] text-body opacity-30 hover:opacity-60 px-3 py-2">skip</button>}
+      {obStep<11&&<button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowOnboard(false);setShowAuth(true);setAuthMode('signup');}} className="fixed top-14 right-4 z-[200] font-sans text-[11px] text-body opacity-30 hover:opacity-60 px-3 py-2">skip</button>}
     </div>}
 
     {/* Paywall */}
     {showPaywall&&<div className="fixed inset-0 z-[90] overflow-y-auto" style={{background:'linear-gradient(160deg, #F8EAEA 0%, #FAF6F2 50%, #F5DDDE 100%)'}}>
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-10">
+      <div className="min-h-screen flex flex-col items-center justify-start px-6 pb-10" style={{paddingTop:'max(5rem, calc(env(safe-area-inset-top) + 1.5rem))'}}>
         <div className="max-w-[440px] w-full text-center ob-fade-up">
 
           {/* Header */}
-          <h1 className="font-sans text-[30px] md:text-[38px] text-headline leading-[1.15] font-bold mb-3">Build a life<br/>you'll actually <span className="font-serif italic text-accent">love.</span></h1>
-          <p className="font-serif text-[18px] md:text-[22px] text-headline font-bold mb-8">Start your day with <span className="italic text-accent">clarity</span> and <span className="italic text-accent">balance.</span></p>
+          <h1 className="font-sans text-[30px] md:text-[38px] text-headline leading-[1.15] font-bold mb-2 mt-1">Build a life<br/>that feels <span className="font-serif italic text-accent">alive.</span></h1>
+          <p className="font-serif text-[18px] md:text-[22px] text-headline font-bold mb-1">Wake up excited about your life again.</p>
+          <p className="font-serif text-[15px] md:text-[17px] text-accent italic mb-3">Never run out of meaningful ways to live.</p>
 
           {/* Bullets */}
-          <div className="space-y-3.5 text-left mb-8 max-w-[360px] mx-auto">
+          <div className="space-y-2 text-left mb-3 max-w-[360px] mx-auto">
             {[
-              {e:'\u2728',bold:'Discover meaningful ideas',light:'one for each area of your life'},
-              {e:'\uD83C\uDFAF',bold:'Never wonder what to do',light:'start every day with clear direction'},
-              {e:'\uD83C\uDF3F',bold:'Balance all five parts',light:'create, mindset, connect, move, reset'},
-              {e:'\uD83D\uDD16',bold:'Save your favorites',light:'build a personal idea library'},
-              {e:'\uD83D\uDCDD',bold:'Reflect with journal and voice',light:'capture what made each day meaningful'},
-              {e:'\uD83D\uDCC8',bold:'Watch your Flow grow',light:'track progress across all five areas'}
+              {e:'\u2728',bold:'Hundreds of meaningful ideas',light:'for every area of your life.'},
+              {e:'\uD83C\uDFAF',bold:'Never wonder what to do',light:'start every day with clear direction.'},
+              {e:'\uD83C\uDF31',bold:'Balance all five parts',light:'create, mindset, connect, move, reset.'},
+              {e:'\uD83C\uDFF7\uFE0F',bold:'Save your favorites',light:'build a personal idea library.'},
+              {e:'\uD83D\uDCDD',bold:'Reflect with journal and voice',light:'capture what made each day meaningful.'},
+              {e:'\uD83D\uDCC8',bold:'Watch your Flow grow',light:'track progress across all five areas.'}
             ].map(function(f,i){
               return <div key={i} className="ob-fade-up flex items-start gap-3" style={{animationDelay:(0.2+i*0.08)+'s'}}>
                 <span className="text-[17px] opacity-70 flex-shrink-0 mt-0.5">{f.e}</span>
@@ -5133,47 +6410,66 @@ function App(){
             })}
           </div>
 
+          <p className="font-sans text-[12px] md:text-[13px] text-body opacity-50 mb-3">Try everything free for 3 days. Cancel anytime.</p>
+
           {/* Pricing */}
-          <div className="space-y-2.5 mb-4">
+          <div className="space-y-2.5 mb-3">
             {/* Yearly — PRIMARY */}
             <button onClick={function(){setPricePlan('yearly');}} className="w-full py-5 rounded-[20px] border-2 transition-all relative" style={{background:'white',borderColor:pricePlan==='yearly'?'#C49A7A':'rgba(0,0,0,0.08)',boxShadow:pricePlan==='yearly'?'0 0 24px rgba(196,154,122,0.25), 0 4px 12px rgba(196,154,122,0.08)':'none'}}>
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-sans text-[9px] font-bold text-white px-3.5 py-1 rounded-full tracking-[0.05em] uppercase" style={{background:'#C49A7A',boxShadow:'0 2px 8px rgba(196,154,122,0.4)'}}>Best Value</span>
-              <p className="font-sans text-[18px] md:text-[20px] text-headline font-bold">$29.99 / year</p>
-              <p className="font-sans text-[11px] md:text-[12px] text-body opacity-45 mt-0.5">just $2.50/month</p>
+              <p className="font-sans text-[18px] md:text-[20px] text-headline font-bold">3 days free</p>
+              <p className="font-sans text-[13px] md:text-[14px] text-headline font-semibold mt-0.5">{rcPrices.yearly||'Then $29.99/year'}</p>
+              <p className="font-sans text-[11px] md:text-[12px] text-body opacity-45 mt-0.5">Just $2.50/month</p>
             </button>
 
             {/* Monthly — SECONDARY */}
             <button onClick={function(){setPricePlan('monthly');}} className="w-full py-3.5 rounded-[16px] border-2 transition-all" style={{background:'white',borderColor:pricePlan==='monthly'?'#C49A7A':'rgba(0,0,0,0.08)',boxShadow:pricePlan==='monthly'?'0 0 24px rgba(196,154,122,0.25), 0 4px 12px rgba(196,154,122,0.08)':'none'}}>
-              <p className="font-sans text-[14px] text-headline">$4.99 / month</p>
+              <p className="font-sans text-[14px] text-headline font-bold">3 days free</p>
+              <p className="font-sans text-[13px] text-headline mt-0.5">{rcPrices.monthly||'Then $4.99/month'}</p>
             </button>
           </div>
 
           {/* Psychological nudge */}
-          <p className="font-serif text-[12px] md:text-[13px] text-body opacity-55 italic mb-3">You've already started. Don't lose your flow.</p>
+          <p className="font-serif text-[12px] md:text-[13px] text-body opacity-55 italic mb-2">You've already started. Don't lose your flow.</p>
 
-          {/* Purchase error */}
+          {/* Purchase error / loading */}
+          {rcStoreLoading&&!purchaseError&&<p className="font-sans text-[13px] text-center mb-3 fade-in text-body opacity-50">Connecting to the App Store...</p>}
+          {!rcStoreLoading&&!rcStoreReady&&!purchaseError&&<p className="font-sans text-[13px] text-center mb-3 fade-in" style={{color:'#B34B3D'}}>Subscriptions could not be loaded from the App Store yet. Pull down and reopen the paywall, or try again in a moment.</p>}
           {purchaseError&&<p className="font-sans text-[13px] text-center mb-3 fade-in" style={{color:'#B34B3D'}}>{purchaseError}</p>}
+          {isDebugBuild&&rcStoreDiag&&<p className="font-sans text-[10px] text-center mb-3 text-body opacity-45 leading-relaxed px-2">{rcStoreDiag}</p>}
 
           {/* CTA */}
           <button onClick={function(){
             setPurchaseError('');
             if(isNativeApp){
-              // Native: must use Apple IAP via RevenueCat — never Stripe
-              if(!window.RCPurchases){setPurchaseError('Store not available. Please try again.');return;}
+              if(!window.RCPurchases){setPurchaseError('RevenueCat native plugin is not available in this build.');return;}
               var Purchases=window.RCPurchases.Purchases;
-              if(!rcOfferings||!rcOfferings.current){setPurchaseError('Loading products… please wait a moment and try again.');return;}
-              var pkg=pricePlan==='yearly'?rcOfferings.current.annual:rcOfferings.current.monthly;
-              if(!pkg&&rcOfferings.current.availablePackages){pkg=rcOfferings.current.availablePackages.find(function(p){return pricePlan==='yearly'?p.packageType==='ANNUAL':p.packageType==='MONTHLY';});}
-              if(!pkg){setPurchaseError('Product not found. Please try again.');return;}
               setPurchaseLoading(true);
-              Purchases.purchasePackage({aPackage:pkg}).then(function(){
+              var ensureReady=(currentUser&&currentUser.uid)?rcLogin(currentUser.uid):configureRevenueCat();
+              Promise.resolve(ensureReady).then(function(){
+                return resolveRcPurchaseTarget(pricePlan);
+              }).then(function(target){
+                if(!target){
+                  throw new Error('StoreKit products are not loaded. '+buildRcStoreDiagLabel('Check RevenueCat offering + App Store Connect product IDs.'));
+                }
+                return executeRcPurchase(Purchases,target);
+              }).then(function(result){
+                if(!result){
+                  throw new Error('Purchase returned no result from StoreKit.');
+                }
+                if(rcHasPro(result)){
+                  return grantProAccess();
+                }
+                console.warn('[RC] purchase completed without Pro entitlement',unwrapRcCustomerInfo(result));
+                throw new Error('Purchase finished but the Pro entitlement is not active. Verify RevenueCat entitlement "Pro" is linked to these products.');
+              }).then(function(){
                 setPurchaseLoading(false);
-                setIsPro(true);
-                setShowPaywall(false);setShowOnboard(false);
-                if(currentUser){window.db.collection('users').doc(currentUser.uid).set({isPro:true},{merge:true}).catch(function(){});}
               }).catch(function(e){
                 setPurchaseLoading(false);
-                if(!e.userCancelled)setPurchaseError(e.message||'Something went wrong. Please try again.');
+                if(e&&e.userCancelled)return;
+                var msg=formatRcError(e)||'Something went wrong. Please try again.';
+                logRcError('purchase',e);
+                setPurchaseError(msg);
               });
               return;
             }
@@ -5184,32 +6480,35 @@ function App(){
             window.location.href=base+'?client_reference_id='+uid+(email?'&prefilled_email='+encodeURIComponent(email):'');
           }} disabled={purchaseLoading} className="w-full font-sans text-[15px] md:text-[16px] font-bold text-white py-4 rounded-full active:scale-[0.98] transition-all"
             style={{background:purchaseLoading?'rgba(196,154,122,0.6)':'#C49A7A',boxShadow:'0 6px 20px rgba(196,154,122,0.35)'}}>
-            {purchaseLoading?'Processing...':'Start my subscription'}
+            {purchaseLoading?'Processing...':'Start my 3-day free trial'}
           </button>
 
           {/* Subscription terms — required by App Store guideline 3.1.2 */}
           <p className="font-sans text-[11px] text-body opacity-40 mt-2 leading-relaxed max-w-[320px] mx-auto">
-            {pricePlan==='yearly'
-              ? '$29.99/year (≈$2.50/mo). '
-              : '$4.99/month. '}
-            Subscription auto-renews unless cancelled at least 24 hours before the renewal date. Manage in your Apple ID account settings.
+            3-day free trial, then renews at the selected plan unless canceled at least 24 hours before the trial ends.
           </p>
           <button onClick={function(){setShowPaywall(false);setShowOnboard(false);setShowAuth(true);setAuthMode('login');}} className="font-sans text-[13px] text-body opacity-50 hover:opacity-80 mt-3 transition-opacity block mx-auto">Already have an account? <span className="underline underline-offset-2">Sign in</span></button>
 
           {/* Legal footer: Restore • Terms • Privacy */}
           <div className="flex items-center justify-center gap-1 mt-6">
             <button onClick={function(){
-              setRestoreState('loading');setShowRestore(true);
+              setRestoreState('loading');setShowRestore(true);setPurchaseError('');
               if(window.RCPurchases){
-                window.RCPurchases.Purchases.restorePurchases().then(function(result){
-                  var active=result&&result.customerInfo&&result.customerInfo.entitlements&&result.customerInfo.entitlements.active;
-                  if(active&&active['Pro']){
-                    setIsPro(true);setShowPaywall(false);
-                    if(currentUser){window.db.collection('users').doc(currentUser.uid).set({isPro:true},{merge:true});}
+                var ensureRestore=(currentUser&&currentUser.uid)?rcLogin(currentUser.uid):configureRevenueCat();
+                Promise.resolve(ensureRestore).then(function(){
+                  return window.RCPurchases.Purchases.restorePurchases();
+                }).then(function(result){
+                  if(rcHasPro(result)){
+                    return grantProAccess().then(function(){setRestoreState('success');});
                   }
                   setRestoreState('success');
-                }).catch(function(){setRestoreState('success');});
-              }else{setTimeout(function(){setRestoreState('success');},1800);}
+                  setPurchaseError('No active subscription was found to restore for this Apple ID.');
+                }).catch(function(e){
+                  logRcError('restore',e);
+                  setRestoreState('success');
+                  setPurchaseError(formatRcError(e)||'Restore failed. Please try again.');
+                });
+              }else{setTimeout(function(){setRestoreState('success');setPurchaseError('RevenueCat native plugin is not available in this build.');},300);}
             }} className="font-sans text-[11px] text-body opacity-45 hover:opacity-80 transition-opacity px-2.5 py-1">Restore</button>
             <span className="w-[3px] h-[3px] rounded-full" style={{background:'rgba(97,68,51,0.25)'}}/>
             <button onClick={function(){setShowTerms(true);}} className="font-sans text-[11px] text-body opacity-45 hover:opacity-80 transition-opacity px-2.5 py-1">Terms</button>
@@ -5313,46 +6612,19 @@ function App(){
 
     {showAuth&&<div className="fixed inset-0 z-[95] flex flex-col items-center justify-center px-6 overflow-y-auto py-10" style={{background:'linear-gradient(160deg, #F8EAEA 0%, #FAF6F2 50%, #F5DDDE 100%)'}}>
       <div className="w-full max-w-sm fade-in">
-        <button onClick={function(){setShowAuth(false);if(!(showOnboard&&obStep===7))setShowPaywall(true);}} className="flex items-center gap-1.5 font-sans text-[13px] text-body opacity-50 hover:opacity-80 transition-opacity mb-8 active:scale-[0.97]">
+        <button onClick={handleAuthBack} className="flex items-center gap-1.5 font-sans text-[13px] text-body opacity-50 hover:opacity-80 transition-opacity mb-8 active:scale-[0.97]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           back
         </button>
         <h1 className="font-serif text-[32px] text-headline text-center mb-2">{authMode==='signup'?React.createElement(React.Fragment,null,'continue with',React.createElement('br',null),'passion flow daily ✨'):'welcome back'}</h1>
         <p className="font-sans text-[14px] text-body text-center mb-8 opacity-70">{authMode==='signup'?'Save your flows, progress, and reflections.':'log in to continue your flow'}</p>
 
-        <button onClick={function(){
-          if(isNativeApp&&window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SignInWithApple){
-            var rawNonce=Math.random().toString(36).substring(2,18)+Math.random().toString(36).substring(2,18);
-            crypto.subtle.digest('SHA-256',new TextEncoder().encode(rawNonce)).then(function(buf){
-              var hashedNonce=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-              return window.Capacitor.Plugins.SignInWithApple.authorize({scopes:'email name',state:rawNonce,nonce:hashedNonce});
-            }).then(function(result){
-              var cred=new firebase.auth.OAuthProvider('apple.com').credential({idToken:result.response.identityToken,rawNonce:rawNonce});
-              return firebase.auth().signInWithCredential(cred);
-            }).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){if(e.code===1001||e.message&&e.message.indexOf('1001')!==-1||e.userCancelled)return;setAuthError(e.message||'apple sign-in failed');});
-          }else{
-            var p=new firebase.auth.OAuthProvider('apple.com');
-            firebase.auth().signInWithPopup(p).then(function(){setShowAuth(false);}).catch(function(e){setAuthError(e.message||'apple sign-in failed');});
-          }
-        }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 mb-3 rounded-full flex items-center justify-center gap-2 active:scale-[0.98]" style={{background:'#111'}}>
+        <button onClick={handleAppleSignIn} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 mb-3 rounded-full flex items-center justify-center gap-2 active:scale-[0.98]" style={{background:'#111'}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
           continue with apple
         </button>
 
-        <button onClick={function(){
-          if(isNativeApp&&window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.googleAuth){
-            new Promise(function(resolve,reject){
-              window._googleAuthResolve=resolve;
-              window._googleAuthReject=function(e){reject(new Error(typeof e==='string'?e:'google sign-in failed'));};
-              window.webkit.messageHandlers.googleAuth.postMessage({action:'signIn'});
-            }).then(function(result){
-              var cred=firebase.auth.GoogleAuthProvider.credential(result.idToken,result.accessToken);
-              return firebase.auth().signInWithCredential(cred);
-            }).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(function(e){if(e.message==='CANCELED')return;setAuthError(e.message||'google sign-in failed');});
-          }else{
-            setAuthError('google sign-in is not available on this device');
-          }
-        }} className="w-full font-sans text-[14px] font-semibold text-headline bg-white py-3.5 mb-5 rounded-full flex items-center justify-center gap-2 border border-black/5 active:scale-[0.98]">
+        <button onClick={handleGoogleSignIn} className="w-full font-sans text-[14px] font-semibold text-headline bg-white py-3.5 mb-5 rounded-full flex items-center justify-center gap-2 border border-black/5 active:scale-[0.98]">
           <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.2 5.2C40.9 35.6 44 30.3 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
           continue with google
         </button>
@@ -5369,7 +6641,7 @@ function App(){
 
         {authError&&<p className="font-sans text-[13px] text-center mb-3" style={{color:'#B34B3D'}}>{authError}</p>}
 
-        <button onClick={function(){if(authMode==='signup'&&!authName.trim()){setAuthError('please enter your name');return;}if(!authEmail||!authPass){setAuthError('please fill in both fields');return;}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail)){setAuthError('that email looks off');return;}if(authPass.length<6){setAuthError('password must be at least 6 characters');return;}var handleErr=function(e){var m=e.message||'something went wrong';if(e.code==='auth/email-already-in-use')m='that email is already registered — try logging in';else if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')m='wrong password';else if(e.code==='auth/user-not-found')m='no account found — try signing up';else if(e.code==='auth/weak-password')m='password must be at least 6 characters';setAuthError(m);};if(authMode==='signup'){var nm=authName.trim();firebase.auth().createUserWithEmailAndPassword(authEmail,authPass).then(function(cred){rcLogin(cred.user.uid);return cred.user.updateProfile({displayName:nm});}).then(function(){setUserName(nm);setShowAuth(false);}).catch(handleErr);}else{firebase.auth().signInWithEmailAndPassword(authEmail,authPass).then(function(cred){rcLogin(cred&&cred.user&&cred.user.uid);setShowAuth(false);}).catch(handleErr);}}} className="w-full font-sans text-[15px] font-bold text-white py-4 rounded-full active:scale-[0.98] mt-2" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>
+        <button onClick={handleEmailAuth} className="w-full font-sans text-[15px] font-bold text-white py-4 rounded-full active:scale-[0.98] mt-2" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>
           {authMode==='signup'?'sign up':'log in'}
         </button>
 
@@ -5388,8 +6660,27 @@ function App(){
     {!showOnboard&&!showPaywall&&!showAuth&&isOffline&&<div className="fixed top-0 inset-x-0 z-[80] flex items-center justify-center gap-2 px-4 py-2 font-sans text-[13px] text-white text-center" style={{background:'#8B4B3D'}}>
       No internet connection. Some features may be unavailable.
     </div>}
-    {!showOnboard&&!showPaywall&&!showAuth&&renderMobile()}
-    {!showOnboard&&!showPaywall&&!showAuth&&renderDesktop()}
+    {!showOnboard&&!showPaywall&&!showAuth&&currentUser&&isPro&&renderMobile()}
+    {!showOnboard&&!showPaywall&&!showAuth&&currentUser&&isPro&&renderDesktop()}
+
+    {/* Existing user — optional personalization prompt */}
+    {showProfilePrompt&&<div className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center px-5 pb-8 sm:pb-0" style={{background:'rgba(46,28,22,0.35)',backdropFilter:'blur(4px)'}} onClick={function(){setShowProfilePrompt(false);try{localStorage.setItem('pfd_profile_prompt_dismissed','1');}catch(e){}trackEvent('profile_prompt_dismissed');}}>
+      <div className="w-full max-w-[360px] rounded-[24px] p-6 text-center fade-in" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.15)'}} onClick={function(e){e.stopPropagation();}}>
+        <p className="text-[28px] mb-2">✨</p>
+        <h3 className="font-serif text-[20px] text-headline italic mb-2">Want better recommendations?</h3>
+        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Tell us a little about your goals — it takes under a minute and helps Passion Flow feel more you.</p>
+        <button onClick={function(){
+          setShowProfilePrompt(false);
+          trackEvent('profile_prompt_accepted');
+          setShowOnboard(true);setObStep(9);setObSub(0);
+        }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2 active:scale-[0.98]" style={{background:'#C49A7A'}}>Personalize my flow</button>
+        <button onClick={function(){
+          setShowProfilePrompt(false);
+          try{localStorage.setItem('pfd_profile_prompt_dismissed','1');}catch(e){}
+          trackEvent('profile_prompt_dismissed');
+        }} className="font-sans text-[12px] text-body opacity-45 py-2">Not now</button>
+      </div>
+    </div>}
 
     {/* Shared card panel overlay (works on both mobile + desktop) */}
     {openCard&&<MobileCardPanel
@@ -5402,8 +6693,51 @@ function App(){
       onSelectSingle={selectSingle} onToggleSave={toggleSave}
       onRequestDelete={function(cid,idea){confirmDelete(cid,idea);}}
       onStartThis={startThis} onComplete={completeCat} onAddCustom={addCustom}
+      onPickForMe={function(catId){gateDeepPersonalization('pick',catId);}}
       onClose={function(){setOpenCard(null);}}
     />}
+
+    {/* Deep personalization modal (Layer 2) */}
+    {showDeepPersonalization&&<div className="fixed inset-0 z-[88] flex items-end sm:items-center justify-center px-4 pb-8 sm:pb-0" style={{background:'rgba(46,28,22,0.4)',backdropFilter:'blur(4px)'}} onClick={function(e){if(e.target===e.currentTarget){setShowDeepPersonalization(false);setPendingRecAction(null);}}}>
+      <div className="w-full max-w-[400px] rounded-[24px] p-6 sheet-up max-h-[85vh] overflow-y-auto" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.18)'}} onClick={function(e){e.stopPropagation();}}>
+        {renderDeepPersonalizationScreen()}
+      </div>
+    </div>}
+
+    {/* Pick for Me result */}
+    {pickForMeResult&&<div className="fixed inset-0 z-[87] flex items-end justify-center" style={{background:'rgba(0,0,0,0.3)'}} onClick={function(e){if(e.target===e.currentTarget)setPickForMeResult(null);}}>
+      <div className="w-full max-w-[500px] rounded-t-[28px] px-5 pt-5 pb-8 sheet-up" style={{background:CARDS.find(function(c){return c.id===pickForMeResult.categoryId;})?CARDS.find(function(c){return c.id===pickForMeResult.categoryId;}).color:'#FAF6F2'}} onClick={function(e){e.stopPropagation();}}>
+        <div className="w-10 h-[4px] rounded-full mx-auto mb-4" style={{background:'rgba(97,68,51,0.18)'}}/>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-35 uppercase tracking-[0.12em] mb-1">Pick for Me · {pickForMeResult.composed.categoryLabel}</p>
+        <p className="font-serif text-[18px] text-headline italic leading-snug mb-2">{pickForMeResult.composed.title}</p>
+        {pickForMeResult.composed.reason&&<p className="font-sans text-[11px] text-body opacity-45 mb-4">{pickForMeResult.composed.reason}</p>}
+        <div className="flex flex-col gap-2">
+          <button onClick={function(){acceptRecommendation(pickForMeResult.categoryId,pickForMeResult.composed.sourceText,pickForMeResult.composed.ideaId);}} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full" style={{background:'#C49A7A'}}>Add to my day</button>
+          <button onClick={shufflePickForMe} className="w-full font-sans text-[13px] font-semibold py-3 rounded-full border" style={{borderColor:'rgba(196,154,122,0.4)',color:'#614433'}}>{'🎲'} Try another</button>
+          <button onClick={function(){setPickForMeResult(null);}} className="font-sans text-[11px] text-body opacity-40 py-1">Not now</button>
+        </div>
+      </div>
+    </div>}
+
+    {/* Plan My Day sheet */}
+    {planMyDayResult&&<div className="fixed inset-0 z-[87] flex items-end justify-center" style={{background:'rgba(0,0,0,0.3)'}} onClick={function(e){if(e.target===e.currentTarget)setPlanMyDayResult(null);}}>
+      <div className="w-full max-w-[500px] rounded-t-[28px] px-5 pt-5 pb-8 sheet-up max-h-[88vh] overflow-y-auto" style={{background:'#FAF6F2'}} onClick={function(e){e.stopPropagation();}}>
+        <div className="w-10 h-[4px] rounded-full mx-auto mb-4" style={{background:'rgba(97,68,51,0.18)'}}/>
+        <p className="font-serif text-[20px] text-headline italic mb-1">Your day, planned</p>
+        <p className="font-sans text-[12px] text-body opacity-45 mb-4">Tap any idea to add it — or add all at once.</p>
+        <div className="space-y-3 mb-4">{CARDS.map(function(c){var item=planMyDayResult[c.id];if(!item)return null;return <div key={c.id} className="rounded-[14px] px-3 py-3 border" style={{background:c.color,borderColor:c.borderColor}}>
+          <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-body opacity-40 mb-1">{c.emoji} {c.title}</p>
+          <p className="font-sans text-[13px] text-headline leading-snug mb-2">{item.title}</p>
+          <button onClick={function(){acceptRecommendation(c.id,item.sourceText,item.ideaId);}} className="font-sans text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{background:c.checkBg,color:'white'}}>Add</button>
+        </div>;})}</div>
+        <button onClick={function(){
+          CARDS.forEach(function(c){var item=planMyDayResult[c.id];if(item)selectSingle(c.id,item.sourceText,false);});
+          trackEvent('recommendation_accepted',{type:'plan_all'});
+          setPlanMyDayResult(null);
+        }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2" style={{background:'#C49A7A'}}>Add all to my day</button>
+        <button onClick={function(){setPlanMyDayResult(null);}} className="w-full font-sans text-[11px] text-body opacity-40 py-2">Close</button>
+      </div>
+    </div>}
 
     {/* Shared completion overlay */}
     {showOverlay&&<div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(250,246,242,0.92)',backdropFilter:'blur(8px)'}}>
@@ -5436,25 +6770,37 @@ function App(){
 
     {/* Shared share overlay */}
     {shareLog&&<div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(0,0,0,0.4)'}} onClick={function(e){if(e.target===e.currentTarget)setShareLog(null);}}>
-      <div className="w-[320px] rounded-[24px] overflow-hidden fade-in" style={{boxShadow:'0 8px 40px rgba(0,0,0,0.15)'}}>
-        <div className="px-6 py-6" style={{background:'linear-gradient(160deg, #FCE4EC 0%, #FAF6F2 40%, #EDE6F6 70%, #E0F2E9 100%)'}}>
+      <div className="w-[320px] rounded-[24px] fade-in" style={{boxShadow:'0 8px 40px rgba(0,0,0,0.15)'}}>
+        <div id="share-card-capture" className="px-6 pt-6 pb-8 rounded-t-[24px]" style={{background:'linear-gradient(160deg, #FCE4EC 0%, #FAF6F2 40%, #EDE6F6 70%, #E0F2E9 100%)',width:320,boxSizing:'border-box'}}>
           <p className="font-sans text-[9px] text-body opacity-40 uppercase tracking-[0.15em] mb-2">Passion Flow Daily</p>
           <p className="font-serif text-[20px] text-headline italic leading-snug mb-4">{shareLog.date}</p>
-          <div className="space-y-2.5 mb-4">{CARDS.map(function(c){var act=shareLog.activities[c.id];if(!act)return null;return <div key={c.id} className="flex items-start gap-2.5 px-3 py-2 rounded-[12px]" style={{background:'rgba(255,255,255,0.6)',border:'1px solid '+c.borderColor}}><span className="text-[15px] mt-0.5">{c.emoji}</span><div className="flex-1"><p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-body opacity-40">{c.title}</p><p className="font-sans text-[12px] text-headline leading-snug">{act}</p></div></div>;})}</div>
-          <div className="flex items-center gap-3 mb-3"><p className="font-sans text-[11px] text-body opacity-50">flow: {shareLog.flow}/10</p>{shareLog.balance&&<p className="font-sans text-[11px] text-accent opacity-55">{shareLog.balance==='yes'?'\u2728 balanced':shareLog.balance==='getting-there'?'\uD83D\uDE0C getting there':'\uD83D\uDE15 not quite'}</p>}</div>
-          {shareLog.feelings&&shareLog.feelings.length>0&&<div className="flex flex-wrap gap-1 mb-3">{shareLog.feelings.map(function(f){var fe=FEELINGS.find(function(x){return x.label===f;});return <span key={f} className="font-sans text-[9px] text-accent bg-white/60 px-2 py-0.5 rounded-full">{fe?fe.emoji:''} {f}</span>;})}</div>}
-          {shareLog.reflection&&<p className="font-serif text-[12px] text-body italic opacity-55">"{shareLog.reflection}"</p>}
+          <div className="space-y-2.5 mb-5">{CARDS.map(function(c){var act=shareLog.activities[c.id];if(!act)return null;return <div key={c.id} className="flex items-start gap-2.5 px-3 py-2 rounded-[12px]" style={{background:'rgba(255,255,255,0.6)',border:'1px solid '+c.borderColor}}><span className="text-[15px] mt-0.5">{c.emoji}</span><div className="flex-1"><p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-body opacity-40">{c.title}</p><p className="font-sans text-[12px] text-headline leading-snug">{act}</p></div></div>;})}</div>
+          <div className="flex items-center gap-3 mb-4"><p className="font-sans text-[11px] text-body opacity-50">flow: {shareLog.flow}/10 {shareLog.flow<=3?'\uD83D\uDCA8':shareLog.flow<=7?'\uD83C\uDFAF':'\uD83D\uDE80'}</p>{shareLog.balance&&<p className="font-sans text-[11px] text-headline">{shareLog.balance==='yes'?'\u2728 balanced':shareLog.balance==='getting-there'?'\uD83D\uDE0C getting there':'\uD83D\uDE15 not quite'}</p>}</div>
+          {shareLog.feelings&&shareLog.feelings.length>0&&<div className="flex flex-wrap gap-1.5 mb-4">{shareLog.feelings.map(function(f){var fe=FEELINGS.find(function(x){return x.label===f;});return <span key={f} data-share-pill={f} style={{display:'inline-block',fontFamily:'Inter,sans-serif',fontSize:9,fontWeight:600,color:'#C49A7A',background:'#FFFFFF',border:'1px solid rgba(196,154,122,0.22)',padding:'0 10px',borderRadius:999,lineHeight:'26px',height:26,boxSizing:'border-box'}}>{fe?fe.emoji+' ':''}{f}</span>;})}</div>}
+          {shareLog.reflection&&<p className="font-serif text-[12px] text-body italic opacity-55 mb-4">"{shareLog.reflection}"</p>}
+          <hr data-share-footer-line={true} style={{display:'block',width:'100%',height:1,border:'none',background:'rgba(0,0,0,0.06)',margin:'16px 0 14px'}}/>
+          <div data-share-footer={true} style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'100%',paddingBottom:8}}>
+            <span className="font-sans text-[8px] text-body opacity-30 uppercase tracking-[0.15em]">Passion Flow Daily</span>
+            <span className="font-serif text-[9px] text-accent italic opacity-60">passionflowdaily.com</span>
+          </div>
         </div>
-        <div className="bg-white px-6 py-4">
+        <div className="bg-white px-6 py-4 rounded-b-[24px]">
           <p className="font-sans text-[11px] text-body opacity-40 mb-3">share this moment</p>
           <div className="flex items-center gap-3">
             <button onClick={function(){handleSaveShareImage(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 2v10M5 8l4 5 4-5M3 15h12"/></svg><span className="font-sans text-[9px] text-headline font-medium">Save Image</span></button>
-            <button onClick={function(){handleShareText(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 14c0 1.1.9 2 2 2h10a2 2 0 002-2V6.8a2 2 0 00-.6-1.4l-3.8-3.8A2 2 0 0010.2 1H4a2 2 0 00-2 2v11z"/><path d="M6 9l3 3 3-3"/></svg><span className="font-sans text-[9px] text-headline font-medium">iMessage</span></button>
-            <button onClick={function(){handleShareText(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="14" height="14" rx="4"/><circle cx="9" cy="9" r="3.5"/><circle cx="13.5" cy="4.5" r="0.5" fill="#614433"/></svg><span className="font-sans text-[9px] text-headline font-medium">IG Story</span></button>
+            <button onClick={function(){handleShareText(shareLog);}} className="flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[14px] border transition-all active:scale-[0.97]" style={{borderColor:'rgba(0,0,0,0.06)',background:'#FAF6F2'}}><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#614433" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 14c0 1.1.9 2 2 2h10a2 2 0 002-2V6.8a2 2 0 00-.6-1.4l-3.8-3.8A2 2 0 0010.2 1H4a2 2 0 00-2 2v11z"/><path d="M6 9l3 3 3-3"/></svg><span className="font-sans text-[9px] text-headline font-medium">Share</span></button>
           </div>
           <button onClick={function(){setShareLog(null);}} className="w-full font-sans text-[11px] text-body opacity-40 mt-3 text-center">cancel</button>
         </div>
       </div>
+    </div>}
+
+    {photoSaveMsg&&<div className="fixed inset-0 z-[120] flex items-center justify-center px-8 fade-in pointer-events-none">
+      <div className="font-sans text-[15px] font-semibold text-white px-7 py-4 rounded-2xl text-center" style={{background:'#C49A7A',boxShadow:'0 8px 32px rgba(196,154,122,0.5)',maxWidth:320}}>{'\u2713'} {photoSaveMsg}</div>
+    </div>}
+
+    {loadError&&<div className="fixed top-16 left-0 right-0 z-[120] flex justify-center px-6 fade-in">
+      <div className="font-sans text-[12px] text-center px-4 py-2.5 rounded-full shadow-md max-w-[340px]" style={{background:'#FFF3F0',color:'#B34B3D',border:'1px solid rgba(179,75,61,0.2)'}}>{loadError}</div>
     </div>}
   </div>;
 }
