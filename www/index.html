@@ -2525,7 +2525,7 @@ function App(){
         <div className="flex flex-wrap gap-2">{TIME_BUCKET_OPTIONS.map(function(opt){var sel=pp.defaultTimeBucket===opt.id;return <button key={opt.id} type="button" onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{defaultTimeBucket:opt.id});});}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
       </div>
       {!compact&&<div>
-        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2 mt-2">Deep personalization — Create</p>
+        <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2 mt-2">Deep personalization: Create</p>
         <div className="flex flex-wrap gap-2 mb-3">{CREATE_INTEREST_OPTIONS.map(function(opt){var sel=(pp.createInterests||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('createInterests',opt.id,5);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
         {(pp.createInterests||[]).indexOf('music')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Music</p><div className="flex flex-wrap gap-1.5">{CREATE_MUSIC_SUBTYPES.map(function(opt){var sel=(pp.createMusicSubtypes||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('createMusicSubtypes',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
         {(pp.createInterests||[]).indexOf('art_crafts')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Art</p><div className="flex flex-wrap gap-1.5">{CREATE_ART_SUBTYPES.map(function(opt){var sel=(pp.createArtSubtypes||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('createArtSubtypes',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
@@ -2558,7 +2558,7 @@ function App(){
     var connectHowBody=function(){
       var targets=pp.connectTargets||[];
       if(!targets.length||(targets.length===1&&targets[0]==='self')){
-        return <p className="font-sans text-[12px] text-body opacity-50 max-w-[280px] mx-auto">Got it — we'll suggest solo-friendly connection ideas.</p>;
+        return <p className="font-sans text-[12px] text-body opacity-50 max-w-[280px] mx-auto">Got it. We'll suggest solo-friendly connection ideas.</p>;
       }
       return <div className="space-y-4 text-left max-w-[300px] mx-auto">
         {targets.indexOf('partner')>=0&&<div><p className="font-sans text-[11px] font-semibold text-body opacity-45 mb-2">With your partner, you usually like…</p><div className="flex flex-wrap gap-2 justify-center">{PARTNER_STYLE_OPTIONS.map(function(opt){var sel=(pp.partnerConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'p-'+opt.id} onClick={function(){toggleProfileArray('partnerConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><input type="text" value={pp.partnerName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{partnerName:e.target.value});});}} placeholder="Partner name (optional)" className="w-full mt-2 bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/></div>}
@@ -2580,7 +2580,7 @@ function App(){
     if(personalizeMode==='layer1'){
       var l1=[
         {title:'What matters most right now?',emoji:'✨',sub:'Pick up to 4.',body:<div className="flex flex-wrap gap-2 justify-center">{OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(pp.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleOverallGoal(opt.id);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
-        {title:"What's getting in the way?",emoji:'🌙',sub:'Pick up to 2 — this one shapes your suggestions the most.',body:<div className="flex flex-wrap gap-2 justify-center">{CORE_FRICTION_OPTIONS.map(function(opt){var sel=(pp.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[11px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+        {title:"What's getting in the way?",emoji:'🌙',sub:'Pick up to 2. This one shapes your suggestions the most.',body:<div className="flex flex-wrap gap-2 justify-center">{CORE_FRICTION_OPTIONS.map(function(opt){var sel=(pp.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[11px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
         {title:'Your day',emoji:'🕰️',sub:'So ideas fit the life you actually have.',body:<div className="text-left max-w-[300px] mx-auto space-y-3">
           <div><p className="font-sans text-[10px] text-body opacity-45 mb-1.5">Life context</p><div className="flex flex-wrap gap-1.5">{LIFE_CONTEXT_OPTIONS.map(function(opt){var sel=(pp.lifeContext||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('lifeContext',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>
           <div><p className="font-sans text-[10px] text-body opacity-45 mb-1.5">How full are your days?</p><div className="flex flex-col gap-1.5">{DAY_BANDWIDTH_OPTIONS.map(function(opt){var sel=pp.dayBandwidth===opt.id;return <button key={opt.id} onClick={function(){setPersonalizationProfile(function(p){return Object.assign({},p,{dayBandwidth:opt.id});});}} className="font-sans text-[11px] px-3 py-2 rounded-[12px] border text-left" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>
@@ -2588,7 +2588,7 @@ function App(){
         </div>}
       ];
       if(deepPersonalizationStep===0){
-        return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Let's make this yours</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">Three quick questions — about 20 seconds — and your suggestions start fitting your actual life.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Maybe later</button></div>;
+        return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Let's make this yours</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">Want three quick questions? It takes about 20 seconds, and your suggestions start fitting your actual life.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Maybe later</button></div>;
       }
       var s1=l1[deepPersonalizationStep-1];
       var last1=deepPersonalizationStep>=3;
@@ -2605,7 +2605,7 @@ function App(){
       </div>;
     }
     if(deepPersonalizationStep===0){
-      return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">A few quick screens so Pick for Me and Plan My Day feel more you. Skip any screen — or all of them.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip all</button></div>;
+      return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">A few quick screens so Pick for Me and Plan My Day feel more you. Skip any screen, or all of them.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip all</button></div>;
     }
     var scr=layer2Screens[deepPersonalizationStep-1];
     var isLast=deepPersonalizationStep>=LAYER2_TOTAL;
@@ -3984,7 +3984,7 @@ function App(){
           <div className="w-[44px] h-[44px] rounded-full flex items-center justify-center flex-shrink-0 text-[20px]" style={{background:'rgba(196,154,122,0.12)'}}>{'📋'}</div>
           <div className="flex-1 min-w-0">
             <p className="font-serif text-[16px] text-headline italic">Plan my day</p>
-            <p className="font-sans text-[11px] text-body opacity-45">One idea for each area — picked for you</p>
+            <p className="font-sans text-[11px] text-body opacity-45">One idea for each area, picked for you</p>
           </div>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#C49A7A" strokeWidth="1.5" strokeLinecap="round"><path d="M5 2l5 5-5 5"/></svg>
         </button>
@@ -6396,7 +6396,7 @@ function App(){
         {obStep===9&&<div>
           {obSub===0&&<div className="ob-fade-up">
             <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2">What matters most right now? ✨</p>
-            <p className="font-sans text-[13px] text-body opacity-50 mb-5 max-w-[320px] mx-auto">Pick up to 4 — we'll tailor your daily ideas.</p>
+            <p className="font-sans text-[13px] text-body opacity-50 mb-5 max-w-[320px] mx-auto">Pick up to 4. We'll tailor your daily ideas.</p>
             <div className="flex flex-wrap justify-center gap-2 max-w-[340px] mx-auto mb-6">
               {OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(personalizationProfile.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleOverallGoal(opt.id);}} className="font-sans text-[12px] px-4 py-2 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}
             </div>
@@ -6406,7 +6406,7 @@ function App(){
 
           {obSub===1&&<div className="ob-fade-up">
             <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2">What's getting in the way?</p>
-            <p className="font-sans text-[13px] text-body opacity-50 mb-5 max-w-[320px] mx-auto">Pick up to 2 — this helps us suggest ideas that actually fit.</p>
+            <p className="font-sans text-[13px] text-body opacity-50 mb-5 max-w-[320px] mx-auto">Pick up to 2. This helps us suggest ideas that actually fit.</p>
             <div className="flex flex-wrap justify-center gap-2 max-w-[340px] mx-auto mb-6">
               {CORE_FRICTION_OPTIONS.map(function(opt){var sel=(personalizationProfile.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[11px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'}}>{opt.label}</button>;})}
             </div>
@@ -6764,7 +6764,7 @@ function App(){
       <div className="w-full max-w-[360px] rounded-[24px] p-6 text-center fade-in" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.15)'}} onClick={function(e){e.stopPropagation();}}>
         <p className="text-[28px] mb-2">✨</p>
         <h3 className="font-serif text-[20px] text-headline italic mb-2">Want better recommendations?</h3>
-        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Three quick questions — about 20 seconds — and we'll build you a day that actually fits.</p>
+        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Want three quick questions? It takes about 20 seconds, and we'll build you a day that actually fits.</p>
         <button onClick={function(){
           setShowProfilePrompt(false);
           trackEvent('profile_prompt_accepted');
@@ -6810,7 +6810,7 @@ function App(){
         <div className="flex flex-col gap-2">
           <button onClick={function(){acceptRecommendation(pickForMeResult.categoryId,pickForMeResult.composed.title,pickForMeResult.composed.ideaId);}} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full" style={{background:'#C49A7A'}}>Add to my day</button>
           <button onClick={shufflePickForMe} className="w-full font-sans text-[13px] font-semibold py-3 rounded-full border" style={{borderColor:'rgba(196,154,122,0.4)',color:'#614433'}}>{'🎲'} Try another</button>
-          {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){var c=pickForMeResult.categoryId;setPickForMeResult(null);openPersonalizeFlow('layer2','pick',c);}} className="font-sans text-[11px] font-medium py-1.5" style={{color:'#C49A7A'}}>Make these fit even better — a few quick questions</button>}
+          {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){var c=pickForMeResult.categoryId;setPickForMeResult(null);openPersonalizeFlow('layer2','pick',c);}} className="font-sans text-[11px] font-medium py-1.5" style={{color:'#C49A7A'}}>Make these fit even better, a few quick questions</button>}
           <button onClick={function(){setPickForMeResult(null);}} className="font-sans text-[11px] text-body opacity-40 py-1">Not now</button>
         </div>
       </div>
@@ -6821,7 +6821,7 @@ function App(){
       <div className="w-full max-w-[500px] rounded-t-[28px] px-5 pt-5 pb-8 sheet-up max-h-[88vh] overflow-y-auto" style={{background:'#FAF6F2'}} onClick={function(e){e.stopPropagation();}}>
         <div className="w-10 h-[4px] rounded-full mx-auto mb-4" style={{background:'rgba(97,68,51,0.18)'}}/>
         <p className="font-serif text-[20px] text-headline italic mb-1">Your day, planned</p>
-        <p className="font-sans text-[12px] text-body opacity-45 mb-4">Tap any idea to add it — or add all at once.</p>
+        <p className="font-sans text-[12px] text-body opacity-45 mb-4">Tap any idea to add it, or add all at once.</p>
         <div className="space-y-3 mb-4">{CARDS.map(function(c){var item=planMyDayResult[c.id];if(!item)return null;return <div key={c.id} className="rounded-[14px] px-3 py-3 border" style={{background:c.color,borderColor:c.borderColor}}>
           <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-body opacity-40 mb-1">{c.emoji} {c.title}</p>
           <p className="font-sans text-[13px] text-headline leading-snug mb-2">{item.title}</p>
@@ -6832,7 +6832,7 @@ function App(){
           trackEvent('recommendation_accepted',{type:'plan_all'});
           setPlanMyDayResult(null);
         }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2" style={{background:'#C49A7A'}}>Add all to my day</button>
-        {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){setPlanMyDayResult(null);openPersonalizeFlow('layer2','plan',null);}} className="w-full font-sans text-[11px] font-medium py-2" style={{color:'#C49A7A'}}>Make these fit even better — a few quick questions</button>}
+        {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){setPlanMyDayResult(null);openPersonalizeFlow('layer2','plan',null);}} className="w-full font-sans text-[11px] font-medium py-2" style={{color:'#C49A7A'}}>Make these fit even better, a few quick questions</button>}
         <button onClick={function(){setPlanMyDayResult(null);}} className="w-full font-sans text-[11px] text-body opacity-40 py-2">Close</button>
       </div>
     </div>}

@@ -10,7 +10,7 @@
     ],
     walk_calm: [
       'Take a slow {duration} walk without tracking anything. Let movement be the break, not another thing to optimize.',
-      'Go for an easy walk with no pace goal — just enough to change how your body feels.'
+      'Go for an easy walk with no pace goal, just enough to change how your body feels.'
     ],
     walk_novelty: [
       'Walk somewhere busier or different than your usual route for about {duration}.',
@@ -22,15 +22,15 @@
     ],
     dance: [
       'Put on three songs you love and dance through all three.',
-      'Move your body to music you enjoy for {duration} — no choreography required.'
+      'Move your body to music you enjoy for {duration}, no choreography required.'
     ],
     partner_food: [
       'Ask {partner} to grab something small with you later and keep your phones away while you are there.',
-      'Invite {partner} for a quick treat together — phones down for the first 15 minutes.'
+      'Invite {partner} for a quick treat together, phones down for the first 15 minutes.'
     ],
     partner_cozy: [
       'Ask {partner} to make or eat something with you tonight and stay at the table a little longer than usual.',
-      'Plan a cozy evening with {partner} — something simple, no phones on the table.'
+      'Plan a cozy evening with {partner}, something simple, no phones on the table.'
     ],
     partner_active: [
       'Ask {partner} to take a short walk or easy movement with you.',
@@ -41,16 +41,16 @@
       'Text a friend you miss and suggest a low-key hang when you both have a pocket of time.'
     ],
     business_contained: [
-      'Give {project} {duration}. Improve one small thing you already care about — no competitor research, no new tabs.',
-      'Spend {duration} on {project}. One small thing only — no research, no optimizing the whole vision.'
+      'Give {project} {duration}. Improve one small thing you already care about, no competitor research, no new tabs.',
+      'Spend {duration} on {project}. One small thing only, no research, no optimizing the whole vision.'
     ],
     business_fun: [
       'Spend {duration} making one small thing for {project} without checking competitors or analytics.',
-      'Work on {project} for {duration} — make something imperfect and stop when the timer ends.'
+      'Work on {project} for {duration}, make something imperfect and stop when the timer ends.'
     ],
     create_play: [
       'Spend {duration} making something small with no intention of turning it into anything useful.',
-      'Make something messy and just for you for {duration} — no audience, no outcome.'
+      'Make something messy and just for you for {duration}, no audience, no outcome.'
     ],
     photo_novelty: [
       'Take your camera on a {duration} walk and photograph five things you would normally pass without looking.',
@@ -58,30 +58,30 @@
     ],
     mindset_journal: [
       "Write down one decision you keep circling. Finish this sentence once: 'If I didn't need the perfect answer, I'd choose…' Then leave it there.",
-      'Journal one thought that keeps looping — one paragraph max, then close the notebook.'
+      'Journal one thought that keeps looping, one paragraph max, then close the notebook.'
     ],
     mindset_audio: [
-      'Listen to one short episode or {duration} of something that makes you curious — not something telling you how to be more productive.',
+      'Listen to one short episode or {duration} of something that makes you curious, not something telling you how to be more productive.',
       'Spend {duration} with a podcast or talk that expands your perspective, not your to-do list.'
     ],
     mindset_learn: [
       'Watch or read something about a topic you know almost nothing about for {duration}.',
-      'Learn one new thing for {duration} — curiosity only, no self-improvement agenda.'
+      'Learn one new thing for {duration}, curiosity only, no self-improvement agenda.'
     ],
     reset_offline: [
       'Leave your phone in another room and take your time getting ready or winding down for {duration}.',
-      'Put your phone away and do something quiet for {duration} — read, color, or sit without extra input.'
+      'Put your phone away and do something quiet for {duration}, read, color, or sit without extra input.'
     ],
     reset_selfcare: [
       'Take a slow shower or get cozy for {duration}. No podcast, video, or work content while you do.',
-      'Give yourself {duration} of unhurried self-care — skincare, cozy clothes, or a long shower.'
+      'Give yourself {duration} of unhurried self-care, skincare, cozy clothes, or a long shower.'
     ],
     reset_space: [
       'Put away five things, make something comforting to drink, and call the reset finished.',
-      'Tidy one tiny area for {duration}, then stop — no full-home project.'
+      'Tidy one tiny area for {duration}, then stop. No full-home project.'
     ],
     reset_rest: [
-      'Slow down for {duration}. Lie down, nap, or do absolutely nothing — that counts.',
+      'Slow down for {duration}. Lie down, nap, or do absolutely nothing. That counts.',
       'Give yourself {duration} of real rest with no goal attached.'
     ],
     reset_nature: [
@@ -89,13 +89,13 @@
       'Go outside for {duration} and let nature do the resetting.'
     ],
     reset_solo: [
-      'Take yourself somewhere for {duration} — a café, bookstore, or anywhere that gets you out of your usual loop.',
+      'Take yourself somewhere for {duration}, a café, bookstore, or anywhere that gets you out of your usual loop.',,
       'Go somewhere alone for {duration} that feels like a small treat just for you.'
     ],
     generic: [
       '{text}',
       'Try this for {duration}: {text}',
-      'Give yourself {duration} for this — {text}'
+      'Give yourself {duration} for this: {text}'
     ]
   };
 

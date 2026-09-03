@@ -41,10 +41,10 @@
   ];
 
   var DAY_BANDWIDTH_OPTIONS = [
-    { id: 'very_full', label: 'Very full — I barely have time for myself' },
-    { id: 'pretty_full', label: 'Pretty full — I have some pockets of free time' },
-    { id: 'balanced', label: 'Balanced — I usually make time for myself' },
-    { id: 'very_flexible', label: 'Very flexible — I have a lot of control over my day' }
+    { id: 'very_full', label: 'Very full, I barely have time for myself' },
+    { id: 'pretty_full', label: 'Pretty full, I have some pockets of free time' },
+    { id: 'balanced', label: 'Balanced, I usually make time for myself' },
+    { id: 'very_flexible', label: 'Very flexible, I have a lot of control over my day' }
   ];
 
   var TIME_BUCKET_OPTIONS = [
