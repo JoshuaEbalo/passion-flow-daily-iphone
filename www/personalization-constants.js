@@ -9,7 +9,6 @@
     { id: 'movement_energy', label: 'More movement & energy' },
     { id: 'fun_novelty', label: 'More fun & novelty' },
     { id: 'confidence', label: 'More confidence' },
-    { id: 'structure_consistency', label: 'More structure & consistency' },
     { id: 'time_for_self', label: 'More time for myself' },
     { id: 'less_screen_time', label: 'Less screen time' },
     { id: 'personal_growth', label: 'More personal growth' }
@@ -17,15 +16,14 @@
 
   var CORE_FRICTION_OPTIONS = [
     { id: 'overthinking', label: 'I overthink everything' },
-    { id: 'choice_overload', label: 'Too many choices overwhelm me' },
+    { id: 'choice_overload', label: 'I get overwhelmed by too many choices' },
     { id: 'phone_overuse', label: "I'm always on my phone" },
     { id: 'work_switch_off', label: 'I have trouble switching off from work or school' },
     { id: 'low_energy', label: "I'm usually tired" },
     { id: 'time_pressure', label: 'I never feel like I have enough time' },
-    { id: 'activation_difficulty', label: 'I struggle to get started' },
+    { id: 'activation_difficulty', label: 'I struggle to get myself started' },
     { id: 'repetitive_days', label: 'My days feel repetitive' },
     { id: 'self_neglect', label: 'I forget to make time for myself' },
-    { id: 'others_first', label: 'I put other people first' },
     { id: 'lack_direction', label: 'I feel a little lost / unsure what I want' }
   ];
 
@@ -41,10 +39,10 @@
   ];
 
   var DAY_BANDWIDTH_OPTIONS = [
-    { id: 'very_full', label: 'Very full, I barely have time for myself' },
-    { id: 'pretty_full', label: 'Pretty full, I have some pockets of free time' },
-    { id: 'balanced', label: 'Balanced, I usually make time for myself' },
-    { id: 'very_flexible', label: 'Very flexible, I have a lot of control over my day' }
+    { id: 'very_full', label: 'Very full — I barely have time for myself' },
+    { id: 'pretty_full', label: 'Pretty full — I have some pockets of free time' },
+    { id: 'balanced', label: 'Balanced — I usually have time for myself' },
+    { id: 'very_flexible', label: 'Very flexible — I have lots of control over my day' }
   ];
 
   var TIME_BUCKET_OPTIONS = [
@@ -64,7 +62,7 @@
     { id: 'building_business', label: 'Building / business' },
     { id: 'diy_design', label: 'DIY / design' },
     { id: 'fashion_beauty', label: 'Fashion / beauty' },
-    { id: 'creative_discovery', label: 'I want to discover what I like' }
+    { id: 'creative_discovery', label: 'Trying new things / I want to discover what I like' }
   ];
 
   var CREATE_MUSIC_SUBTYPES = [
@@ -90,7 +88,7 @@
     { id: 'confidence', label: 'Confidence' }, { id: 'self_trust', label: 'Self-trust' },
     { id: 'comparison', label: 'Comparison' }, { id: 'motivation', label: 'Motivation' },
     { id: 'negative_self_talk', label: 'Negative self-talk' }, { id: 'presence', label: 'Being present' },
-    { id: 'direction', label: 'Finding direction' }, { id: 'mental_overwhelm', label: 'Mental overwhelm' }
+    { id: 'direction', label: 'Finding direction' }, { id: 'mental_overwhelm', label: 'Stress / mental overwhelm' }
   ];
 
   var MINDSET_FORMAT_OPTIONS = [
@@ -167,6 +165,8 @@
       connectTargets: [],
       partnerConnectionStyles: [],
       partnerName: '',
+      friendNames: [],
+      familyNames: [],
       friendConnectionStyles: [],
       familyConnectionStyles: [],
       communityConnectionStyles: [],
@@ -215,7 +215,8 @@
     var mapGoals = {
       creativity: 'more_creativity', less_screen_time: 'less_screen_time', more_movement: 'movement_energy',
       deeper_connections: 'deeper_relationships', mindfulness: 'peace_presence', new_hobbies: 'more_creativity',
-      consistency: 'structure_consistency', self_care: 'time_for_self', growth: 'personal_growth', adventure: 'fun_novelty'
+      consistency: 'personal_growth', self_care: 'time_for_self', growth: 'personal_growth', adventure: 'fun_novelty',
+      structure_consistency: 'personal_growth'
     };
     var mapTime = { '5-10': 'micro', '15-30': 'short', '30-60': 'medium', any: 'flexible' };
     (profile.overallGoals || []).forEach(function (g) {

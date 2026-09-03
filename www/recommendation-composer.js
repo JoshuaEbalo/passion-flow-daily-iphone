@@ -33,12 +33,44 @@
       'Plan a cozy evening with {partner}, something simple, no phones on the table.'
     ],
     partner_active: [
-      'Ask {partner} to take a short walk or easy movement with you.',
-      'Invite {partner} to join you for something active, even if it is just a walk.'
+      'Plan something simple and active with {partner}, a walk, stretch, or easy movement together.',
+      'Invite {partner} to join you for something light and physical, nothing intense.'
+    ],
+    partner_adventure: [
+      'Suggest a little adventure with {partner}, somewhere new or slightly outside your usual routine.',
+      'Ask {partner} to try one small new thing with you this week.'
+    ],
+    partner_talk: [
+      'Ask {partner} for a real conversation tonight, phones away, even 20 minutes counts.',
+      'Check in with {partner} about something you have been meaning to talk about.'
+    ],
+    friend_food: [
+      'Text {friend} and see if they want to grab coffee or food this week.',
+      'Ask {friend} to meet you somewhere easy for a catch-up over food or drinks.'
+    ],
+    friend_active: [
+      'Invite {friend} to join you for a walk or something active, even if it is short.',
+      'Ask {friend} if they want to move with you, a walk, class, or something low-key.'
     ],
     friend_lowkey: [
-      'Send one friend a voice note instead of waiting until you have time for a full catch-up.',
-      'Text a friend you miss and suggest a low-key hang when you both have a pocket of time.'
+      'Send {friend} a voice note instead of waiting until you have time for a full catch-up.',
+      'Text {friend} you miss and suggest a low-key hang when you both have a pocket of time.'
+    ],
+    friend_new: [
+      'Ask {friend} to try something new with you, a café, spot, or activity you have not done together.',
+      'Invite {friend} on a small adventure, nothing big, just something different.'
+    ],
+    family_food: [
+      'Ask {family} if they want to grab lunch or dinner with you soon.',
+      'Suggest a simple meal out or at home with {family}, no agenda needed.'
+    ],
+    family_lowkey: [
+      'Call or text {family} for a real catch-up, not just a quick check-in.',
+      'Reach out to {family} and plan something easy together when you can.'
+    ],
+    community_new: [
+      'Say yes to one small social thing this week, even if it feels slightly outside your comfort zone.',
+      'Put yourself near people for a bit, a class, event, or casual hang where you might meet someone new.'
     ],
     business_contained: [
       'Give {project} {duration}. Improve one small thing you already care about, no competitor research, no new tabs.',
@@ -89,7 +121,7 @@
       'Go outside for {duration} and let nature do the resetting.'
     ],
     reset_solo: [
-      'Take yourself somewhere for {duration}, a café, bookstore, or anywhere that gets you out of your usual loop.',,
+      'Take yourself somewhere for {duration}, a café, bookstore, or anywhere that gets you out of your usual loop.',
       'Go somewhere alone for {duration} that feels like a small treat just for you.'
     ],
     generic: [
@@ -107,9 +139,29 @@
     return '20 minutes';
   }
 
-  function partnerLabel(profile) {
+  function hashStr(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+
+  function rotateName(names, seed, fallback) {
+    var list = (names || []).map(function (n) { return (n || '').trim(); }).filter(Boolean);
+    if (!list.length) return fallback;
+    return list[Math.abs(seed) % list.length];
+  }
+
+  function partnerLabel(profile, seed) {
     var n = (profile.partnerName || '').trim();
     return n || 'your partner';
+  }
+
+  function friendLabel(profile, seed) {
+    return rotateName(profile.friendNames, seed, 'a friend');
+  }
+
+  function familyLabel(profile, seed) {
+    return rotateName(profile.familyNames, seed, 'someone in your family');
   }
 
   function projectLabel(profile) {
@@ -122,15 +174,12 @@
     return list[Math.abs(seed) % list.length];
   }
 
-  function hashStr(s) {
-    var h = 0;
-    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return h;
-  }
-
   function detectFamily(idea, profile, categoryId) {
     var t = (idea.text || '').toLowerCase();
     var fr = profile.coreFrictions || [];
+    var targets = profile.connectTargets || [];
+    var styles = profile.partnerConnectionStyles || [];
+
     if (categoryId === 'move') {
       if (/dance/.test(t)) return 'dance';
       if (/walk|stroll/.test(t)) {
@@ -142,16 +191,28 @@
       return 'walk_calm';
     }
     if (categoryId === 'connect') {
-      if ((profile.connectTargets || []).indexOf('partner') >= 0) {
-        if ((profile.partnerConnectionStyles || []).indexOf('food_cafes') >= 0) return 'partner_food';
-        if ((profile.partnerConnectionStyles || []).indexOf('active') >= 0) return 'partner_active';
+      var ideaTargets = idea.connectTargetTags || [];
+      var primary = ideaTargets[0] || (targets.indexOf('partner') >= 0 ? 'partner' : targets[0]) || 'friends';
+      if (primary === 'partner' || (targets.indexOf('partner') >= 0 && ideaTargets.indexOf('partner') >= 0)) {
+        if (styles.indexOf('food_cafes') >= 0 || /café|coffee|food|restaurant|treat/.test(t)) return 'partner_food';
+        if (styles.indexOf('adventure') >= 0 || /adventure|try something new|explore/.test(t)) return 'partner_adventure';
+        if (styles.indexOf('deep_conversation') >= 0 || /conversation|talk|check in/.test(t)) return 'partner_talk';
+        if (styles.indexOf('active') >= 0 || /walk|active|workout|move/.test(t)) return 'partner_active';
         return 'partner_cozy';
       }
+      if (primary === 'family' || ideaTargets.indexOf('family') >= 0) {
+        if (/food|meal|lunch|dinner|café/.test(t)) return 'family_food';
+        return 'family_lowkey';
+      }
+      if (primary === 'community' || ideaTargets.indexOf('community') >= 0) return 'community_new';
+      if (/food|café|coffee/.test(t)) return 'friend_food';
+      if (/walk|active|workout|move|sport/.test(t)) return 'friend_active';
+      if (/try something new|adventure|explore/.test(t)) return 'friend_new';
       return 'friend_lowkey';
     }
     if (categoryId === 'create') {
       if (/photo|film|camera/.test(t)) return 'photo_novelty';
-      if ((profile.createInterests || []).indexOf('building_business') >= 0) {
+      if ((profile.createInterests || []).indexOf('building_business') >= 0 && idea.productivityHeavy) {
         if (fr.indexOf('work_switch_off') >= 0) return 'business_contained';
         return 'business_fun';
       }
@@ -161,6 +222,7 @@
       if ((profile.mindsetFormats || []).indexOf('journaling') >= 0) return 'mindset_journal';
       if ((profile.mindsetFormats || []).indexOf('podcasts') >= 0) return 'mindset_audio';
       if ((profile.mindsetFormats || []).indexOf('documentaries') >= 0 || (profile.mindsetFormats || []).indexOf('learning') >= 0) return 'mindset_learn';
+      if ((profile.mindsetNeeds || []).length && Math.abs(hashStr(idea.id)) % 3 === 0) return 'mindset_learn';
       return 'mindset_journal';
     }
     if (categoryId === 'nourish') {
@@ -181,10 +243,13 @@
     return 'generic';
   }
 
-  function fillTemplate(tpl, profile, idea) {
+  function fillTemplate(tpl, profile, idea, seed) {
+    seed = seed || hashStr(idea.id + (profile.updatedAt || ''));
     return tpl
       .replace(/\{duration\}/g, durationLabel(profile, idea))
-      .replace(/\{partner\}/g, partnerLabel(profile))
+      .replace(/\{partner\}/g, partnerLabel(profile, seed))
+      .replace(/\{friend\}/g, friendLabel(profile, seed))
+      .replace(/\{family\}/g, familyLabel(profile, seed))
       .replace(/\{project\}/g, projectLabel(profile))
       .replace(/\{text\}/g, idea.text || '');
   }
@@ -192,6 +257,7 @@
   function reasonLine(profile, idea, categoryId) {
     var parts = [];
     if ((profile.coreFrictions || []).indexOf('phone_overuse') >= 0 && idea.offline) parts.push('less screen time');
+    if ((profile.overallGoals || []).indexOf('less_screen_time') >= 0 && idea.offline) parts.push('less screen time');
     if ((profile.overallGoals || []).indexOf('more_creativity') >= 0 && categoryId === 'create') parts.push('more creativity');
     if ((profile.resetStyles || []).length && categoryId === 'nourish') parts.push('how you like to reset');
     if (parts.length) return 'Picked for ' + parts.slice(0, 2).join(' and ') + '.';
@@ -200,22 +266,28 @@
 
   function compose(idea, profile, categoryId) {
     if (!idea) return null;
-    var family = detectFamily(idea, profile, categoryId || idea.categoryId);
-    var seed = hashStr(idea.id + (profile.updatedAt || ''));
+    var cat = categoryId || idea.categoryId;
+    var family = detectFamily(idea, profile, cat);
+    var seed = hashStr(idea.id + (profile.updatedAt || '') + family);
     var tpl = pickVariant(family, seed);
-    var title = fillTemplate(tpl, profile, idea);
+    var title = fillTemplate(tpl, profile, idea, seed);
     if (family === 'generic' && title.indexOf('{text}') < 0 && title === idea.text) {
-      title = fillTemplate(pickVariant('generic', seed + 1), profile, idea);
+      title = fillTemplate(pickVariant('generic', seed + 1), profile, idea, seed + 1);
     }
+    var theme = global.PFDRecommendationEngine && global.PFDRecommendationEngine.recommendationThemeKey
+      ? global.PFDRecommendationEngine.recommendationThemeKey(idea, profile, cat)
+      : family;
     return {
       ideaId: idea.id,
-      categoryId: categoryId || idea.categoryId,
+      categoryId: cat,
       categoryLabel: global.PFDConstants ? global.PFDConstants.CATEGORY_LABELS[idea.categoryId] : idea.categoryId,
       title: title,
       sourceText: idea.text,
-      reason: reasonLine(profile, idea, categoryId || idea.categoryId),
+      reason: reasonLine(profile, idea, cat),
       effortScore: idea.effortScore || 2,
-      tags: idea.goalTags || []
+      tags: idea.goalTags || [],
+      family: family,
+      theme: theme
     };
   }
 
