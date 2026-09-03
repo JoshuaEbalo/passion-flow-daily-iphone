@@ -212,6 +212,23 @@ var CARDS = [
     ],sessions:9}
 ];
 
+function cardPickGradient(cardId){
+  var m={
+    create:'linear-gradient(135deg, #FCE4EC 0%, #E890A8 52%, #F0B8C8 100%)',
+    learn:'linear-gradient(135deg, #FDEBD0 0%, #E8BA78 52%, #F0D0A0 100%)',
+    connect:'linear-gradient(135deg, #EDE6F6 0%, #C8A8E8 52%, #D4C2E8 100%)',
+    move:'linear-gradient(135deg, #E0F2E9 0%, #7CC898 52%, #A8D8B8 100%)',
+    nourish:'linear-gradient(135deg, #FFF8E1 0%, #E0C868 52%, #F0E0A0 100%)'
+  };
+  return m[cardId]||m.create;
+}
+function dailyFlowGradient(){
+  return 'linear-gradient(135deg, #FCE4EC 0%, #EDE6F6 24%, #E0F2E9 50%, #FFF8E1 76%, #FDEBD0 100%)';
+}
+function streakBadgeGradient(){
+  return 'linear-gradient(135deg, #FAD4E0 0%, #E8DCF8 35%, #D4F0E4 68%, #FFF4CC 100%)';
+}
+
 var FOCUS_PACKS = {
   create: [
     {id:'creative-expression',icon:'🎨',title:'Creative Expression',desc:'Your personal everyday creative rituals',tags:['Art','Writing','Photography','Crafts','DIY'],
@@ -1275,7 +1292,7 @@ function FlowWheel(p){
         var lp=labelPos(i);
         var isInProg=isActive||st==='planned';
         return <g key={c.id} onClick={function(){p.onOpen(c.id);}} style={{cursor:'pointer'}}>
-          <path d={slicePath(i)} fill={fillColor} fillOpacity={fillOpacity} stroke="white" strokeWidth="3"/>
+          <path d={slicePath(i)} fill={fillColor} fillOpacity={fillOpacity} stroke={c.checkBg} strokeWidth="2.5"/>
           {isDone&&<path d={slicePath(i)} fill="none" stroke="#4CAF50" strokeWidth="3" strokeOpacity="0.6"/>}
           {isInProg&&!isDone&&<path d={slicePath(i)} fill="none" stroke={c.checkBg} strokeWidth="2.5" strokeOpacity="0.6" strokeDasharray="6 4"/>}
           <g transform={'rotate('+(-(rotation))+' '+lp.x+' '+lp.y+')'}>
@@ -1755,8 +1772,8 @@ function MobileCardPanel(p){
           </div>
         </div>
         <div className="flex-shrink-0 px-5 pt-3 pb-8" style={{borderTop:'1px solid '+card.borderColor,background:card.color}}>
-          <button onClick={function(){if(p.onPickForMe)p.onPickForMe(card.id);}} className="w-full font-sans text-[14px] font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 mb-2 active:scale-[0.98] transition-all"
-            style={{background:card.checkBg,color:'white',boxShadow:'0 4px 14px rgba(0,0,0,0.12)'}}>
+          <button onClick={function(e){e.stopPropagation();if(p.onPickForMe)p.onPickForMe(card.id);}} className="w-full font-sans text-[14px] font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 mb-2 active:scale-[0.98] transition-all"
+            style={{background:cardPickGradient(card.id),color:'white',boxShadow:'0 4px 16px rgba(0,0,0,0.14)',border:'1px solid rgba(255,255,255,0.35)'}}>
             {'✨'} Pick for Me
           </button>
           {addOwnInput}
@@ -1974,10 +1991,27 @@ function normalizePersonalizationProfile(profile){
   if(!profile)return createEmptyPersonalizationProfile();
   if(window.PFDConstants&&window.PFDConstants.migrateProfileToV3){
     var p=window.PFDConstants.migrateProfileToV3(profile);
-    if(!profile.version||profile.version<3)p.deepPersonalizationCompleted=false;
+    var hadLayer2=(profile.createInterests||[]).length||(profile.connectTargets||[]).length||(profile.mindsetNeeds||[]).length||(profile.movePreferences||[]).length||(profile.resetStyles||[]).length;
+    if((!profile.version||profile.version<3)&&!hadLayer2)p.deepPersonalizationCompleted=false;
+    else if(hadLayer2)p.deepPersonalizationCompleted=true;
     return p;
   }
   return profile;
+}
+function hydratePersonalizationForExisting(profile,docData){
+  var p=normalizePersonalizationProfile(profile||{});
+  if(!docData)return p;
+  var isExisting=!!(docData.onboarded||docData.isPro||(docData.logsData&&docData.logsData.length)||docData.obAnswers||(docData.personalizationProfile&&docData.personalizationProfile.completedAt));
+  if(!isExisting)return p;
+  /* Skip onboarding gates for legacy accounts — never invent visible chip selections. */
+  var hadLayer2=(p.createInterests||[]).length||(p.connectTargets||[]).length||(p.mindsetNeeds||[]).length||(p.movePreferences||[]).length||(p.resetStyles||[]).length;
+  if(hadLayer2)p.deepPersonalizationCompleted=true;
+  /* Clear silent defaults from older builds so Settings doesn't look pre-filled. */
+  if(!(p.coreFrictions||[]).length&&p.dayBandwidth==='balanced'&&p.defaultTimeBucket==='flexible'){
+    p.dayBandwidth=null;
+    p.defaultTimeBucket=null;
+  }
+  return p;
 }
 function createEmptyBehaviorSignals(){
   return {frequentlyAcceptedTags:{},frequentlySkippedTags:{},recentCategories:[],recentCompletedIdeaIds:[],recentShownIdeaIds:[],recentShownByCategory:{create:[],learn:[],connect:[],move:[],nourish:[]},pickForMeDayKey:null,lastUpdatedAt:Date.now()};
@@ -2043,6 +2077,11 @@ function App(){
   var _pickForMeResult=useState(null),pickForMeResult=_pickForMeResult[0],setPickForMeResult=_pickForMeResult[1];
   var _pickForMeShownThemes=useState([]),pickForMeShownThemes=_pickForMeShownThemes[0],setPickForMeShownThemes=_pickForMeShownThemes[1];
   var _planMyDayResult=useState(null),planMyDayResult=_planMyDayResult[0],setPlanMyDayResult=_planMyDayResult[1];
+  var _planMyDayCache=useState(null),planMyDayCache=_planMyDayCache[0],setPlanMyDayCache=_planMyDayCache[1];
+  var _planMyDayDayKey=useState(null),planMyDayDayKey=_planMyDayDayKey[0],setPlanMyDayDayKey=_planMyDayDayKey[1];
+  var _planMyDayAdded=useState({}),planMyDayAdded=_planMyDayAdded[0],setPlanMyDayAdded=_planMyDayAdded[1];
+  var planSheetDragY=useRef(0);
+  var planSheetStartY=useRef(0);
   var _pickCategoryId=useState(null),pickCategoryId=_pickCategoryId[0],setPickCategoryId=_pickCategoryId[1];
   var _obBuilding=useState(false),obBuilding=_obBuilding[0],setObBuilding=_obBuilding[1];
   var _obDone=useState(false),obDone=_obDone[0],setObDone=_obDone[1];
@@ -2170,17 +2209,18 @@ function App(){
             if(d.logsData!==undefined)setLogsData(d.logsData);
             if(d.isPro!==undefined)setIsPro(d.isPro);
             if(d.onboarded||d.isPro){try{localStorage.setItem('pfd_onboarded','1');}catch(e){}}
+            existingAccountRef.current=!!(d.onboarded||d.isPro||(d.logsData&&d.logsData.length)||d.obAnswers||(d.personalizationProfile&&d.personalizationProfile.completedAt));
             if(d.userName!==undefined)setUserName(d.userName);
             if(d.reminderTime!==undefined)setReminderTime(d.reminderTime);
             if(d.personalizationProfile!==undefined){
-              var normProfile=normalizePersonalizationProfile(d.personalizationProfile);
+              var normProfile=hydratePersonalizationForExisting(d.personalizationProfile,d);
               setPersonalizationProfile(normProfile);
               if(normProfile.completedAt||normProfile.skippedAt){try{localStorage.setItem('pfd_personalized','1');}catch(e){}}
               if(!d.personalizationProfile.version||d.personalizationProfile.version<3){
                 window.db.collection('users').doc(u.uid).set({personalizationProfile:normProfile},{merge:true}).catch(function(){});
               }
             }else if(d.obAnswers){
-              var migrated=migrateObAnswersToProfile(d.obAnswers);
+              var migrated=hydratePersonalizationForExisting(migrateObAnswersToProfile(d.obAnswers),d);
               setPersonalizationProfile(migrated);
               try{localStorage.setItem('pfd_personalized','1');}catch(e){}
               window.db.collection('users').doc(u.uid).set({personalizationProfile:migrated},{merge:true}).catch(function(){});
@@ -2345,6 +2385,7 @@ function App(){
   var userLoadedRef=useRef(false);
   var dataHydratedRef=useRef(false);
   var authIsNewUserRef=useRef(false);
+  var existingAccountRef=useRef(false);
   var showOnboardRef=useRef(false);
   var obStepRef=useRef(0);
   useEffect(function(){
@@ -2498,31 +2539,64 @@ function App(){
     trackEvent(mode==='layer1'?'layer1_catchup_started':'deep_personalization_started',{triggered_by:action||null,category:categoryId||null});
   }
   function gateDeepPersonalization(action,categoryId){
-    if(profileNeedsLayer1()&&!personalizationProfile.skippedAt){openPersonalizeFlow('layer1',action,categoryId);return;}
-    if(!personalizationProfile.deepPersonalizationCompleted){openPersonalizeFlow('layer2',action,categoryId);return;}
-    if(action==='pick')executePickForMe(categoryId);
-    else executePlanMyDay();
+    if(action==='pick'){
+      setOpenCard(null);
+      if(!existingAccountRef.current&&profileNeedsLayer1()&&!personalizationProfile.skippedAt){
+        openPersonalizeFlow('layer1',action,categoryId);
+        return;
+      }
+      executePickForMe(categoryId);
+      return;
+    }
+    if(!personalizationProfile.deepPersonalizationCompleted){
+      openPersonalizeFlow('layer2',action,categoryId);
+      return;
+    }
+    openPlanMyDay(false);
   }
   function executePickForMe(categoryId,profileOverride){
     if(!window.PFDRecommendationEngine||!window.PFDRecommendationComposer)return;
     var prof=profileOverride||personalizationProfile;
     var idea=pickForMeCandidate(categoryId,prof,[],false,false);
-    if(!idea)return;
+    if(!idea){
+      trackEvent('pick_for_me_empty',{category:categoryId});
+      return;
+    }
     var composed=window.PFDRecommendationComposer.compose(idea,prof,categoryId);
     setPickForMeShownIds([idea.id]);
-    setPickForMeShownThemes(composed.theme?[composed.theme]:[]);
+    setPickForMeShownThemes(composed.theme?[composed.theme]:composed.family?[composed.family]:[]);
     setPickForMeResult({composed:composed,idea:idea,categoryId:categoryId});
     recordPickForMeShown(categoryId,idea.id);
     trackEvent('pick_for_me_shown',{category:categoryId});
   }
-  function executePlanMyDay(profileOverride){
+  function openPlanMyDay(forceShuffle){
+    if(!personalizationProfile.deepPersonalizationCompleted){
+      openPersonalizeFlow('layer2','plan',null);
+      return;
+    }
+    executePlanMyDay(null,!!forceShuffle);
+  }
+  function executePlanMyDay(profileOverride,forceShuffle){
     if(!window.PFDRecommendationEngine||!window.PFDRecommendationComposer)return;
+    var today=getLocalDayKey();
+    if(!forceShuffle&&planMyDayCache&&planMyDayDayKey===today){
+      setPlanMyDayResult(planMyDayCache);
+      return;
+    }
     var prof=profileOverride||personalizationProfile;
     var plan=window.PFDRecommendationEngine.planMyDay(prof,buildRecommendationContext());
     var composed={};
     Object.keys(plan).forEach(function(cat){composed[cat]=window.PFDRecommendationComposer.compose(plan[cat],prof,cat);});
+    setPlanMyDayCache(composed);
+    setPlanMyDayDayKey(today);
+    setPlanMyDayAdded({});
     setPlanMyDayResult(composed);
-    trackEvent('plan_my_day_shown');
+    trackEvent('plan_my_day_shown',{reshuffle:!!forceShuffle});
+  }
+  function addPlanItem(categoryId,text,ideaId){
+    selectSingle(categoryId,text,false);
+    setPlanMyDayAdded(function(prev){var n=Object.assign({},prev);n[categoryId]=true;return n;});
+    trackEvent('recommendation_accepted',{category:categoryId,idea_id:ideaId||null,source:'plan_item'});
   }
   function finishDeepPersonalization(wasSkipped){
     var next=Object.assign({},personalizationProfile,{version:3,updatedAt:Date.now()});
@@ -2532,6 +2606,8 @@ function App(){
       next.skippedAt=(next.coreFrictions||[]).length?null:Date.now();
       trackEvent(wasSkipped?'layer1_catchup_skipped':'layer1_catchup_completed',{goals:(next.overallGoals||[]).length,frictions:(next.coreFrictions||[]).length});
     }else if(wasSkipped){
+      next.deepPersonalizationCompleted=true;
+      next.deepPersonalizationSkippedAt=Date.now();
       trackEvent('deep_personalization_skipped',{step:deepPersonalizationStep});
     }else{
       next.deepPersonalizationCompleted=true;
@@ -2547,7 +2623,7 @@ function App(){
     setPendingRecAction(null);
     // Pass `next` explicitly — the state update has not applied yet.
     if(action==='pick')executePickForMe(cat,next);
-    else if(action==='plan')executePlanMyDay(next);
+    else if(action==='plan')openPlanMyDay(false);
   }
   function acceptRecommendation(categoryId,text,ideaId){
     selectSingle(categoryId,text,false);
@@ -2697,24 +2773,21 @@ function App(){
   function applyPaywallOrPersonalize(isProKnown){
     if(isProKnown){
       setShowPaywall(false);
-      if(needsOnboardingPersonalization()){
+      if(needsOnboardingPersonalization()&&!existingAccountRef.current){
         routeToOnboardingPersonalization();
         return;
       }
-      setShowPaywall(false);
-      showOnboardRef.current=true;
-      obStepRef.current=12;
-      setShowOnboard(true);
-      setObStep(12);
+      setShowOnboard(false);
+      showOnboardRef.current=false;
       return;
     }
     if(isOnboardingBeforePaywall()){
       setShowPaywall(false);
-      if(currentUser&&obStepRef.current<=8)routeToOnboardingPersonalization();
+      if(currentUser&&obStepRef.current<=8&&!existingAccountRef.current)routeToOnboardingPersonalization();
       return;
     }
     if(!shouldShowPaywallGate()){
-      if(!showOnboardRef.current)routeToPersonalization();
+      if(!showOnboardRef.current&&!existingAccountRef.current)routeToPersonalization();
       return;
     }
     setShowPaywall(true);
@@ -2812,14 +2885,19 @@ function App(){
     var uid=(firebase.auth().currentUser&&firebase.auth().currentUser.uid)||(currentUser&&currentUser.uid);
     setIsPro(true);
     setShowPaywall(false);
-    if(needsOnboardingPersonalization()){
+    if(needsOnboardingPersonalization()&&!existingAccountRef.current){
       routeToOnboardingPersonalization();
     }else{
       setShowPaywall(false);
-      showOnboardRef.current=true;
-      obStepRef.current=12;
-      setShowOnboard(true);
-      setObStep(12);
+      if(!existingAccountRef.current){
+        showOnboardRef.current=true;
+        obStepRef.current=12;
+        setShowOnboard(true);
+        setObStep(12);
+      }else{
+        setShowOnboard(false);
+        showOnboardRef.current=false;
+      }
     }
     if(uid){
       try{localStorage.removeItem('pfd_pending_pro');}catch(e){}
@@ -3519,9 +3597,9 @@ function App(){
     return function(){clearTimeout(t);};
   },[obStep,obSub]);
 
-  // After sign-in at demo, continue into Layer 1 personalization
+  // After sign-in at demo, continue into Layer 1 personalization (new users only)
   useEffect(function(){
-    if(currentUser&&showOnboard&&obStep===8){
+    if(currentUser&&showOnboard&&obStep===8&&!existingAccountRef.current){
       setShowAuth(false);
       routeToOnboardingPersonalization();
     }
@@ -3857,9 +3935,9 @@ function App(){
 
   useEffect(function(){
     if(!currentUser||!userLoaded||!isPro||showOnboard||showPaywall||showAuth||showSplash||showLanding)return;
-    if(!profileNeedsLayer1()||personalizationProfile.skippedAt)return;
+    if(personalizationProfile.deepPersonalizationCompleted)return;
     try{if(localStorage.getItem('pfd_profile_prompt_dismissed')==='1')return;}catch(e){}
-    var isExisting=(logsData&&logsData.length>0)||!!(obAnswers&&obAnswers.q1);
+    var isExisting=existingAccountRef.current||(logsData&&logsData.length>0)||!!(obAnswers&&obAnswers.q1);
     if(!isExisting)return;
     setShowProfilePrompt(true);
     trackEvent('profile_prompt_shown');
@@ -4039,6 +4117,17 @@ function App(){
   var card=CARDS[idx];
 
   /* ═══ MOBILE RENDER ═══ */
+  var renderDailyFlowButton=function(extraCls){
+    return <button onClick={function(){gateDeepPersonalization('plan');}} className={'w-full rounded-[18px] px-4 py-3.5 flex items-center gap-3 text-left active:scale-[0.99] transition-all '+(extraCls||'')}
+      style={{background:dailyFlowGradient(),border:'1px solid rgba(255,255,255,0.55)',boxShadow:'0 6px 22px rgba(196,154,122,0.22), 0 2px 8px rgba(0,0,0,0.04)'}}>
+      <div className="w-[44px] h-[44px] rounded-full flex items-center justify-center flex-shrink-0 text-[22px]" style={{background:'rgba(255,255,255,0.35)'}}>{'🌊'}</div>
+      <div className="flex-1 min-w-0">
+        <p className="font-serif text-[16px] text-white italic" style={{textShadow:'0 1px 8px rgba(97,68,51,0.15)'}}>Pick My Daily Flow</p>
+        <p className="font-sans text-[11px] text-white opacity-90">One personalized idea for each area</p>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"><path d="M5 2l5 5-5 5"/></svg>
+    </button>;
+  };
   var renderMobile=function(){
     return <div className="lg:hidden min-h-screen pb-36" style={{background:'#FAF6F2'}}>
       {/* Header */}
@@ -4046,9 +4135,9 @@ function App(){
         <p className="font-sans text-[10px] font-medium text-body opacity-40 tracking-[0.15em] uppercase mb-2">{dateStr}</p>
         <div className="flex items-center justify-between gap-3 mb-1">
           <h1 className="font-serif text-[20px] text-headline leading-tight min-w-0 flex-1">Welcome back, {userName}. {'\u2728'}</h1>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full flex-shrink-0" style={{background:'white',border:'1px solid #C49A7A',boxShadow:'0 0 12px rgba(196,154,122,0.1)'}}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full flex-shrink-0" style={{background:streakBadgeGradient(),border:'1px solid rgba(255,255,255,0.5)',boxShadow:'0 0 14px rgba(196,154,122,0.18)'}}>
             <span className="text-[14px]">{'\uD83D\uDD25'}</span>
-            <div className="text-right"><p className="font-sans text-[14px] font-bold text-headline leading-none">{streak}</p><p className="font-sans text-[8px] text-body opacity-40">day streak</p></div>
+            <div className="text-right"><p className="font-sans text-[14px] font-bold text-headline leading-none">{streak}</p><p className="font-sans text-[8px] text-body opacity-50">day streak</p></div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -4069,19 +4158,8 @@ function App(){
           <FlowWheel cardStates={cardStates} spinKey={spinKey} onOpen={function(id){setOpenCard(id);}}/>
         </div>
 
-        {/* Pick My Daily Flow */}
-        <button onClick={function(){gateDeepPersonalization('plan');}} className="w-full mb-3 rounded-[18px] px-4 py-3.5 flex items-center gap-3 text-left active:scale-[0.99] transition-all"
-          style={{background:'white',border:'1px solid #C49A7A',boxShadow:'0 0 18px rgba(196,154,122,0.12), 0 2px 8px rgba(0,0,0,0.03)'}}>
-          <div className="w-[44px] h-[44px] rounded-full flex items-center justify-center flex-shrink-0 text-[20px]" style={{background:'rgba(196,154,122,0.12)'}}>{'📋'}</div>
-          <div className="flex-1 min-w-0">
-            <p className="font-serif text-[16px] text-headline italic">Pick My Daily Flow</p>
-            <p className="font-sans text-[11px] text-body opacity-45">One personalized idea for each area</p>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#C49A7A" strokeWidth="1.5" strokeLinecap="round"><path d="M5 2l5 5-5 5"/></svg>
-        </button>
-
         {/* Progress steps */}
-        <div className="flex items-center justify-center gap-1 mb-3 px-2">
+        <div className="flex items-center justify-center gap-1 mb-3 px-2 mt-1">
           {CARDS.map(function(c, i){
             var done=cardStates[c.id]==='completed';
             var active=cardStates[c.id]==='active'||cardStates[c.id]==='planned';
@@ -4089,7 +4167,7 @@ function App(){
             return <div key={c.id} className="flex items-center" style={{flex:isLast?'0 0 auto':'1'}}>
               <div className="flex flex-col items-center gap-1">
                 <div className="w-[36px] h-[36px] rounded-full flex items-center justify-center border-2 transition-all duration-500"
-                  style={{background:done?c.checkBg:c.color,borderColor:done?'#4CAF50':active?c.checkBg:c.borderColor,boxShadow:done?'0 0 12px '+c.checkBg+'50':'none'}}>
+                  style={{background:done?c.checkBg:c.color,borderColor:done?'#4CAF50':c.checkBg,boxShadow:done?'0 0 12px '+c.checkBg+'50':active?'0 0 8px '+c.checkBg+'35':'none'}}>
                   {done?<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7.5L6 10.5L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   :<span className="text-[14px]">{c.emoji}</span>}
                 </div>
@@ -4100,6 +4178,8 @@ function App(){
           })}
         </div>
         <p className="font-sans text-[11px] text-body opacity-40 text-center mb-3">{completedCount}/5 completed</p>
+
+        <div className="mb-4">{renderDailyFlowButton('')}</div>
 
         {/* In Progress / Completed */}
         {(function(){
@@ -4122,31 +4202,34 @@ function App(){
             {inProgress.length>0&&<div className="mb-3">
               <p className="font-sans text-[10px] font-semibold text-body opacity-30 uppercase tracking-[0.12em] mb-2">In Progress</p>
               <div className="space-y-1.5">
-                {inProgress.map(function(c){
+                {inProgress.flatMap(function(c){
                   var ideas=selectedIdeas[c.id]||[];
-                  return <div key={c.id} className="relative rounded-[14px] border-[1.5px] transition-all"
-                    style={{background:'white',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
-                    {/* Main tap area → complete */}
-                    <button onClick={function(e){completeCat(c.id);}}
-                      className="w-full flex items-center gap-2.5 py-3 text-left active:scale-[0.97] transition-all"
-                      style={{paddingLeft:'14px',paddingRight:'58px'}}>
+                  if(!ideas.length)return [<div key={c.id} className="relative rounded-[14px] border-[1.5px] transition-all"
+                    style={{background:'white',borderColor:c.checkBg,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
+                    <button onClick={function(){completeCat(c.id);}} className="w-full flex items-center gap-2.5 py-3 text-left active:scale-[0.97] transition-all" style={{paddingLeft:'14px',paddingRight:'58px'}}>
                       <span className="text-[16px]">{c.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-sans text-[12px] text-headline font-medium">{c.title.split(' ')[0]}</span>
-                        <p className="font-sans text-[10px] text-body opacity-50 leading-snug">{ideas.join(', ')}</p>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-full" style={{background:'rgba(196,154,122,0.1)',border:'1px solid rgba(196,154,122,0.2)'}}>
-                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="#C49A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7.5L6 10.5L11 4"/></svg>
-                        <span className="font-sans text-[9px] text-headline font-medium">tap to complete</span>
-                      </div>
+                      <div className="flex-1 min-w-0"><span className="font-sans text-[12px] text-headline font-medium">{c.title.split(' ')[0]}</span></div>
                     </button>
-                    {/* Remove button — absolutely positioned so it always shows on iOS Safari */}
-                    <button onClick={function(){setCardStates(function(prev){var n=Object.assign({},prev);delete n[c.id];return n;});setSelectedIdeas(function(prev){var n=Object.assign({},prev);delete n[c.id];return n;});}}
-                      className="absolute top-0 right-0 bottom-0 w-[48px] flex items-center justify-center active:opacity-50 transition-opacity"
-                      style={{borderLeft:'1px solid rgba(196,154,122,0.15)',background:'rgba(255,80,80,0.04)',borderRadius:'0 14px 14px 0'}}>
-                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#E57373" strokeWidth="1.8" strokeLinecap="round"><path d="M2 4h12"/><path d="M6.67 7.33v4"/><path d="M9.33 7.33v4"/><path d="M3.33 4l.67 9.33a1.33 1.33 0 001.33 1.34h5.34a1.33 1.33 0 001.33-1.34L12.67 4"/></svg>
-                    </button>
-                  </div>;
+                  </div>];
+                  return ideas.map(function(idea,idx){
+                    return <div key={c.id+'-'+idx} className="relative rounded-[14px] border-[1.5px] transition-all"
+                      style={{background:'white',borderColor:c.checkBg,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
+                      <button onClick={function(){completeCat(c.id);}} className="w-full flex items-center gap-2.5 py-3 text-left active:scale-[0.97] transition-all" style={{paddingLeft:'14px',paddingRight:'58px'}}>
+                        <span className="text-[16px]">{c.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-sans text-[12px] text-headline font-medium">{c.title.split(' ')[0]}{ideas.length>1?' · '+(idx+1):''}</span>
+                          <p className="font-sans text-[10px] text-body opacity-50 leading-snug">{idea}</p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-full" style={{background:'rgba(196,154,122,0.1)',border:'1px solid rgba(196,154,122,0.2)'}}>
+                          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="#C49A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7.5L6 10.5L11 4"/></svg>
+                          <span className="font-sans text-[9px] text-headline font-medium">done</span>
+                        </div>
+                      </button>
+                      <button onClick={function(){selectSingle(c.id,idea,false);}} className="absolute top-0 right-0 bottom-0 w-[48px] flex items-center justify-center active:opacity-50 transition-opacity" style={{borderLeft:'1px solid rgba(196,154,122,0.15)',background:'rgba(255,80,80,0.04)',borderRadius:'0 14px 14px 0'}}>
+                        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#E57373" strokeWidth="1.8" strokeLinecap="round"><path d="M2 4h12"/><path d="M6.67 7.33v4"/><path d="M9.33 7.33v4"/><path d="M3.33 4l.67 9.33a1.33 1.33 0 001.33 1.34h5.34a1.33 1.33 0 001.33-1.34L12.67 4"/></svg>
+                      </button>
+                    </div>;
+                  });
                 })}
               </div>
             </div>}
@@ -4555,7 +4638,7 @@ function App(){
             </div>
             <div className="flex items-center gap-3">
               <button onClick={function(){setShowLanding(true);}} className="font-sans text-[11px] text-body opacity-30 hover:opacity-60 transition-opacity px-3 py-1.5 rounded-full" style={{border:'1px solid rgba(196,154,122,0.2)'}}>preview landing</button>
-              <div className="flex items-center gap-2 px-3.5 py-2 rounded-full" style={{background:'white',border:'1px solid #C49A7A',boxShadow:'0 0 12px rgba(196,154,122,0.1)'}}>
+              <div className="flex items-center gap-2 px-3.5 py-2 rounded-full" style={{background:streakBadgeGradient(),border:'1px solid rgba(255,255,255,0.5)',boxShadow:'0 0 12px rgba(196,154,122,0.15)'}}>
                 <span className="text-[16px]">{'\uD83D\uDD25'}</span>
                 <div className="text-right"><p className="font-sans text-[15px] font-bold text-headline leading-none">{streak}</p><p className="font-sans text-[8px] text-body opacity-40">day streak</p></div>
               </div>
@@ -4581,7 +4664,7 @@ function App(){
                     var done=cardStates[c.id]==='completed';var active=cardStates[c.id]==='active'||cardStates[c.id]==='planned';var isLast=i===CARDS.length-1;
                     return <div key={c.id} className="flex items-center" style={{flex:isLast?'0 0 auto':'1'}}>
                       <div className="flex flex-col items-center gap-1">
-                        <div className="w-[40px] h-[40px] rounded-full flex items-center justify-center border-2 transition-all duration-500" style={{background:done?c.checkBg:c.color,borderColor:done?'#4CAF50':active?c.checkBg:c.borderColor,boxShadow:done?'0 0 12px '+c.checkBg+'50':'none'}}>
+                        <div className="w-[40px] h-[40px] rounded-full flex items-center justify-center border-2 transition-all duration-500" style={{background:done?c.checkBg:c.color,borderColor:done?'#4CAF50':c.checkBg,boxShadow:done?'0 0 12px '+c.checkBg+'50':active?'0 0 8px '+c.checkBg+'35':'none'}}>
                           {done?<svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M3 7.5L6 10.5L11 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>:<span className="text-[16px]">{c.emoji}</span>}
                         </div>
                         <span className={'font-sans text-[9px] font-medium '+(done?'text-headline':'text-body opacity-45')}>{c.title.split(' ')[0]}</span>
@@ -4590,7 +4673,9 @@ function App(){
                     </div>;
                   })}
                 </div>
-                <p className="font-sans text-[12px] text-body opacity-40 text-center mb-5">{completedCount}/5 completed</p>
+                <p className="font-sans text-[12px] text-body opacity-40 text-center mb-4">{completedCount}/5 completed</p>
+
+                <div className="mb-5 max-w-[420px] mx-auto">{renderDailyFlowButton('')}</div>
 
                 {/* To Do + Completed inline */}
                 <div className="flex gap-4 mb-5">
@@ -6873,12 +6958,13 @@ function App(){
       <div className="w-full max-w-[360px] rounded-[24px] p-6 text-center fade-in" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.15)'}} onClick={function(e){e.stopPropagation();}}>
         <p className="text-[28px] mb-2">✨</p>
         <h3 className="font-serif text-[20px] text-headline italic mb-2">Want better recommendations?</h3>
-        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Want three quick questions? It takes about 20 seconds, and we'll build you a day that actually fits.</p>
+        <p className="font-sans text-[13px] text-body opacity-55 mb-5 leading-relaxed">Update your preferences in Settings anytime, or fine-tune when you tap Pick for Me or Pick My Daily Flow.</p>
         <button onClick={function(){
           setShowProfilePrompt(false);
           trackEvent('profile_prompt_accepted');
-          openPersonalizeFlow('layer1','plan',null);
-        }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2 active:scale-[0.98]" style={{background:'#C49A7A'}}>Personalize my flow</button>
+          setMobileTab('settings');
+          setDesktopTab('settings');
+        }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2 active:scale-[0.98]" style={{background:'#C49A7A'}}>Open personalization</button>
         <button onClick={function(){
           setShowProfilePrompt(false);
           try{localStorage.setItem('pfd_profile_prompt_dismissed','1');}catch(e){}
@@ -6903,14 +6989,23 @@ function App(){
     />}
 
     {/* Deep personalization modal (Layer 2) */}
-    {showDeepPersonalization&&<div className="fixed inset-0 z-[88] flex items-end sm:items-center justify-center px-4 pb-8 sm:pb-0" style={{background:'rgba(46,28,22,0.4)',backdropFilter:'blur(4px)'}} onClick={function(e){if(e.target===e.currentTarget){setShowDeepPersonalization(false);setPendingRecAction(null);}}}>
+    {showDeepPersonalization&&<div className="fixed inset-0 z-[88] flex items-end sm:items-center justify-center px-4 pb-8 sm:pb-0" style={{background:'rgba(46,28,22,0.4)',backdropFilter:'blur(4px)'}} onClick={function(e){
+      if(e.target===e.currentTarget){
+        var action=pendingRecAction;
+        var cat=pickCategoryId;
+        setShowDeepPersonalization(false);
+        setPendingRecAction(null);
+        if(action==='pick'){setOpenCard(null);executePickForMe(cat);}
+        else if(action==='plan')openPlanMyDay(false);
+      }
+    }}>
       <div className="w-full max-w-[400px] rounded-[24px] p-6 sheet-up max-h-[85vh] overflow-y-auto" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.18)'}} onClick={function(e){e.stopPropagation();}}>
         {renderDeepPersonalizationScreen()}
       </div>
     </div>}
 
     {/* Pick for Me result */}
-    {pickForMeResult&&<div className="fixed inset-0 z-[87] flex items-end justify-center" style={{background:'rgba(0,0,0,0.3)'}} onClick={function(e){if(e.target===e.currentTarget)setPickForMeResult(null);}}>
+    {pickForMeResult&&<div className="fixed inset-0 z-[91] flex items-end justify-center" style={{background:'rgba(0,0,0,0.3)'}} onClick={function(e){if(e.target===e.currentTarget)setPickForMeResult(null);}}>
       <div className="w-full max-w-[500px] rounded-t-[28px] px-5 pt-5 pb-8 sheet-up" style={{background:CARDS.find(function(c){return c.id===pickForMeResult.categoryId;})?CARDS.find(function(c){return c.id===pickForMeResult.categoryId;}).color:'#FAF6F2'}} onClick={function(e){e.stopPropagation();}}>
         <div className="w-10 h-[4px] rounded-full mx-auto mb-4" style={{background:'rgba(97,68,51,0.18)'}}/>
         <p className="font-sans text-[10px] font-semibold text-body opacity-35 uppercase tracking-[0.12em] mb-1">Pick for Me · {pickForMeResult.composed.categoryLabel}</p>
@@ -6926,21 +7021,25 @@ function App(){
     </div>}
 
     {/* Pick My Daily Flow sheet */}
-    {planMyDayResult&&<div className="fixed inset-0 z-[87] flex items-end justify-center" style={{background:'rgba(0,0,0,0.3)'}} onClick={function(e){if(e.target===e.currentTarget)setPlanMyDayResult(null);}}>
-      <div className="w-full max-w-[500px] rounded-t-[28px] px-5 pt-5 pb-8 sheet-up max-h-[88vh] overflow-y-auto" style={{background:'#FAF6F2'}} onClick={function(e){e.stopPropagation();}}>
-        <div className="w-10 h-[4px] rounded-full mx-auto mb-4" style={{background:'rgba(97,68,51,0.18)'}}/>
+    {planMyDayResult&&<div className="fixed inset-0 z-[91] flex items-end justify-center" style={{background:'rgba(0,0,0,0.3)'}} onClick={function(e){if(e.target===e.currentTarget)setPlanMyDayResult(null);}}>
+      <div className="w-full max-w-[500px] rounded-t-[28px] px-5 pt-3 pb-8 sheet-up max-h-[88vh] overflow-y-auto" style={{background:'#FAF6F2'}} onClick={function(e){e.stopPropagation();}}>
+        <div className="w-10 h-[4px] rounded-full mx-auto mb-4 cursor-grab py-2" style={{background:'rgba(97,68,51,0.22)'}}
+          onTouchStart={function(e){planSheetStartY.current=e.touches[0].clientY;planSheetDragY.current=0;e.stopPropagation();}}
+          onTouchMove={function(e){var dy=e.touches[0].clientY-planSheetStartY.current;if(dy>0){planSheetDragY.current=dy;var sheet=e.currentTarget.parentElement;if(sheet)sheet.style.transform='translateY('+dy+'px)';}}}
+          onTouchEnd={function(e){var sheet=e.currentTarget.parentElement;if(planSheetDragY.current>72){setPlanMyDayResult(null);}else if(sheet)sheet.style.transform='';planSheetDragY.current=0;}}/>
         <p className="font-serif text-[20px] text-headline italic mb-1">Your Daily Flow ✨</p>
         <p className="font-sans text-[12px] text-body opacity-45 mb-4">Five ideas picked around you. Choose what feels right today.</p>
-        <div className="space-y-3 mb-4">{CARDS.map(function(c){var item=planMyDayResult[c.id];if(!item)return null;return <div key={c.id} className="rounded-[14px] px-3 py-3 border" style={{background:c.color,borderColor:c.borderColor}}>
+        <div className="space-y-3 mb-4">{CARDS.map(function(c){var item=planMyDayResult[c.id];if(!item)return null;var added=!!planMyDayAdded[c.id];return <div key={c.id} className="rounded-[14px] px-3 py-3 border" style={{background:c.color,borderColor:c.borderColor,opacity:added?0.72:1}}>
           <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-body opacity-40 mb-1">{c.emoji} {c.title}</p>
           <p className="font-sans text-[13px] text-headline leading-snug mb-2">{item.title}</p>
-          <button onClick={function(){acceptRecommendation(c.id,item.title,item.ideaId);}} className="font-sans text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{background:c.checkBg,color:'white'}}>Add</button>
+          <button onClick={function(){if(!added)addPlanItem(c.id,item.title,item.ideaId);}} disabled={added} className="font-sans text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all" style={{background:added?'rgba(76,175,80,0.15)':c.checkBg,color:added?'#4CAF50':'white',border:added?'1px solid rgba(76,175,80,0.35)':'none'}}>{added?'Added ✓':'Add'}</button>
         </div>;})}</div>
         <button onClick={function(){
-          CARDS.forEach(function(c){var item=planMyDayResult[c.id];if(item)selectSingle(c.id,item.title,false);});
+          CARDS.forEach(function(c){var item=planMyDayResult[c.id];if(item&&!planMyDayAdded[c.id])addPlanItem(c.id,item.title,item.ideaId);});
           trackEvent('recommendation_accepted',{type:'plan_all'});
           setPlanMyDayResult(null);
         }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2" style={{background:'#C49A7A'}}>Add all to my day</button>
+        <button onClick={function(){executePlanMyDay(null,true);}} className="w-full font-sans text-[13px] font-semibold py-3 rounded-full border mb-2" style={{borderColor:'rgba(196,154,122,0.4)',color:'#614433'}}>{'🎲'} Shuffle ideas</button>
         {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){setPlanMyDayResult(null);openPersonalizeFlow('layer2','plan',null);}} className="w-full font-sans text-[11px] font-medium py-2" style={{color:'#C49A7A'}}>Make these fit even better, a few quick questions</button>}
         <button onClick={function(){setPlanMyDayResult(null);}} className="w-full font-sans text-[11px] text-body opacity-40 py-2">Close</button>
       </div>
