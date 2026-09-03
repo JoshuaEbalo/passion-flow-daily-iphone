@@ -2025,6 +2025,7 @@ function App(){
   var _personalizeMode=useState('layer2'),personalizeMode=_personalizeMode[0],setPersonalizeMode=_personalizeMode[1];
   var _pendingRecAction=useState(null),pendingRecAction=_pendingRecAction[0],setPendingRecAction=_pendingRecAction[1];
   var _pickForMeResult=useState(null),pickForMeResult=_pickForMeResult[0],setPickForMeResult=_pickForMeResult[1];
+  var _pickForMeShownIds=useState([]),pickForMeShownIds=_pickForMeShownIds[0],setPickForMeShownIds=_pickForMeShownIds[1];
   var _planMyDayResult=useState(null),planMyDayResult=_planMyDayResult[0],setPlanMyDayResult=_planMyDayResult[1];
   var _pickCategoryId=useState(null),pickCategoryId=_pickCategoryId[0],setPickCategoryId=_pickCategoryId[1];
   var _obBuilding=useState(false),obBuilding=_obBuilding[0],setObBuilding=_obBuilding[1];
@@ -2426,6 +2427,7 @@ function App(){
     var idea=window.PFDRecommendationEngine.pickForCategory(categoryId,prof,ctx);
     if(!idea)return;
     var composed=window.PFDRecommendationComposer.compose(idea,prof,categoryId);
+    setPickForMeShownIds([idea.id]);
     setPickForMeResult({composed:composed,idea:idea,categoryId:categoryId});
     trackEvent('pick_for_me_shown',{category:categoryId});
   }
@@ -2473,11 +2475,16 @@ function App(){
   function shufflePickForMe(){
     if(!pickForMeResult||!window.PFDRecommendationEngine)return;
     var cat=pickForMeResult.categoryId;
-    var exclude=[pickForMeResult.composed.sourceText];
-    var ctx=buildRecommendationContext(exclude);
+    var excludeIds=(pickForMeShownIds||[]).slice();
+    if(pickForMeResult.idea&&pickForMeResult.idea.id&&excludeIds.indexOf(pickForMeResult.idea.id)<0)excludeIds.push(pickForMeResult.idea.id);
+    var ctx=buildRecommendationContext([]);
+    ctx.categoryId=cat;
+    ctx.excludeIds=excludeIds;
+    ctx.shuffleMode=true;
     var idea=window.PFDRecommendationEngine.pickForCategory(cat,personalizationProfile,ctx);
     if(!idea)return;
     var composed=window.PFDRecommendationComposer.compose(idea,personalizationProfile,cat);
+    setPickForMeShownIds(function(h){var n=h.slice();if(n.indexOf(idea.id)<0)n.push(idea.id);return n.slice(-12);});
     setPickForMeResult({composed:composed,idea:idea,categoryId:cat});
     trackEvent('pick_for_me_shown',{category:cat,reshuffle:true});
   }
@@ -2519,6 +2526,8 @@ function App(){
         <div className="flex flex-wrap gap-2 mb-3">{CONNECT_TARGET_OPTIONS.map(function(opt){var sel=(pp.connectTargets||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('connectTargets',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
         {(pp.connectTargets||[]).indexOf('partner')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Partner style</p><div className="flex flex-wrap gap-1.5 mb-2">{PARTNER_STYLE_OPTIONS.map(function(opt){var sel=(pp.partnerConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('partnerConnectionStyles',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div><input type="text" value={pp.partnerName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{partnerName:e.target.value});});}} placeholder="Partner name (optional)" className="w-full bg-cream rounded-[10px] border border-transparent font-sans text-[12px] text-headline px-3 py-2"/></div>}
         {(pp.connectTargets||[]).indexOf('friends')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Friend style</p><div className="flex flex-wrap gap-1.5">{FRIEND_STYLE_OPTIONS.map(function(opt){var sel=(pp.friendConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('friendConnectionStyles',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        {(pp.connectTargets||[]).indexOf('family')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Family style</p><div className="flex flex-wrap gap-1.5">{FRIEND_STYLE_OPTIONS.map(function(opt){var sel=(pp.familyConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'fam-'+opt.id} type="button" onClick={function(){toggleProfileArray('familyConnectionStyles',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        {(pp.connectTargets||[]).indexOf('community')>=0&&<div className="mb-3"><p className="font-sans text-[10px] text-body opacity-40 mb-1">Community style</p><div className="flex flex-wrap gap-1.5">{FRIEND_STYLE_OPTIONS.filter(function(o){return ['going_out','trying_new','food_cafes','creative','active'].indexOf(o.id)>=0;}).map(function(opt){var sel=(pp.communityConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'com-'+opt.id} type="button" onClick={function(){toggleProfileArray('communityConnectionStyles',opt.id,3);}} className="font-sans text-[11px] px-3 py-1.5 rounded-full border" style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
         <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">Move preferences</p>
         <div className="flex flex-wrap gap-2 mb-3">{MOVE_PREF_OPTIONS.map(function(opt){var sel=(pp.movePreferences||[]).indexOf(opt.id)>=0;return <button key={opt.id} type="button" onClick={function(){toggleProfileArray('movePreferences',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>
         <p className="font-sans text-[10px] font-semibold text-body opacity-40 uppercase tracking-[0.1em] mb-2">How you want to feel</p>
@@ -2533,12 +2542,29 @@ function App(){
     var pp=personalizationProfile;
     var chipCls='font-sans text-[12px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]';
     var chipStyle=function(sel){return {background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#614433'};};
-    var screens=[
-      {title:'Create',emoji:'✨',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">What do you like to make or explore?</p><div className="flex flex-wrap gap-2 justify-center">{CREATE_INTEREST_OPTIONS.map(function(opt){var sel=(pp.createInterests||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('createInterests',opt.id,5);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>{(pp.createInterests||[]).indexOf('building_business')>=0&&<input type="text" value={pp.projectName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{projectName:e.target.value});});}} placeholder="Project name (optional)" className="w-full max-w-[280px] mx-auto mt-3 bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/>}</div>},
-      {title:'Mindset',emoji:'📚',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">What would help your headspace?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{MINDSET_NEED_OPTIONS.slice(0,6).map(function(opt){var sel=(pp.mindsetNeeds||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('mindsetNeeds',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><div className="flex flex-wrap gap-2 justify-center">{MINDSET_FORMAT_OPTIONS.slice(0,5).map(function(opt){var sel=(pp.mindsetFormats||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('mindsetFormats',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>},
-      {title:'Connect',emoji:'💛',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">Who matters most right now?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{CONNECT_TARGET_OPTIONS.map(function(opt){var sel=(pp.connectTargets||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('connectTargets',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>{(pp.connectTargets||[]).indexOf('partner')>=0&&<div><div className="flex flex-wrap gap-2 justify-center mb-2">{PARTNER_STYLE_OPTIONS.slice(0,4).map(function(opt){var sel=(pp.partnerConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('partnerConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><input type="text" value={pp.partnerName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{partnerName:e.target.value});});}} placeholder="Partner name (optional)" className="w-full max-w-[240px] mx-auto bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/></div>}</div>},
-      {title:'Move',emoji:'🏃',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">How do you like to move?</p><div className="flex flex-wrap gap-2 justify-center mb-3">{MOVE_PREF_OPTIONS.map(function(opt){var sel=(pp.movePreferences||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('movePreferences',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><div className="flex flex-wrap gap-2 justify-center">{MOVE_FEELING_OPTIONS.map(function(opt){var sel=(pp.moveDesiredFeelings||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('moveDesiredFeelings',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>},
-      {title:'Reset',emoji:'🌿',body:<div><p className="font-sans text-[12px] text-body opacity-50 mb-3">How do you recharge best?</p><div className="space-y-2 max-w-[300px] mx-auto">{RESET_STYLE_OPTIONS.map(function(opt){var sel=(pp.resetStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('resetStyles',opt.id,3);}} className="w-full text-left px-3 py-2 rounded-[12px] border" style={chipStyle(sel)}><span className="font-sans text-[12px] font-medium">{opt.label}</span></button>;})}</div></div>}
+    var LAYER2_TOTAL=8;
+    var mindsetNeedPick=MINDSET_NEED_OPTIONS.filter(function(o){return ['overthinking','decision_making','confidence','self_trust','comparison','motivation'].indexOf(o.id)>=0;});
+    var connectHowBody=function(){
+      var targets=pp.connectTargets||[];
+      if(!targets.length||(targets.length===1&&targets[0]==='self')){
+        return <p className="font-sans text-[12px] text-body opacity-50 max-w-[280px] mx-auto">Got it — we'll suggest solo-friendly connection ideas.</p>;
+      }
+      return <div className="space-y-4 text-left max-w-[300px] mx-auto">
+        {targets.indexOf('partner')>=0&&<div><p className="font-sans text-[11px] font-semibold text-body opacity-45 mb-2">With your partner, you usually like…</p><div className="flex flex-wrap gap-2 justify-center">{PARTNER_STYLE_OPTIONS.map(function(opt){var sel=(pp.partnerConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'p-'+opt.id} onClick={function(){toggleProfileArray('partnerConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div><input type="text" value={pp.partnerName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{partnerName:e.target.value});});}} placeholder="Partner name (optional)" className="w-full mt-2 bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/></div>}
+        {targets.indexOf('friends')>=0&&<div><p className="font-sans text-[11px] font-semibold text-body opacity-45 mb-2">With friends, you usually like…</p><div className="flex flex-wrap gap-2 justify-center">{FRIEND_STYLE_OPTIONS.map(function(opt){var sel=(pp.friendConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'f-'+opt.id} onClick={function(){toggleProfileArray('friendConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        {targets.indexOf('family')>=0&&<div><p className="font-sans text-[11px] font-semibold text-body opacity-45 mb-2">With family, you usually like…</p><div className="flex flex-wrap gap-2 justify-center">{FRIEND_STYLE_OPTIONS.map(function(opt){var sel=(pp.familyConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'fam-'+opt.id} onClick={function(){toggleProfileArray('familyConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+        {targets.indexOf('community')>=0&&<div><p className="font-sans text-[11px] font-semibold text-body opacity-45 mb-2">With new people or community, you usually like…</p><div className="flex flex-wrap gap-2 justify-center">{FRIEND_STYLE_OPTIONS.filter(function(o){return ['going_out','trying_new','food_cafes','creative','active'].indexOf(o.id)>=0;}).map(function(opt){var sel=(pp.communityConnectionStyles||[]).indexOf(opt.id)>=0;return <button key={'c-'+opt.id} onClick={function(){toggleProfileArray('communityConnectionStyles',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div></div>}
+      </div>;
+    };
+    var layer2Screens=[
+      {title:'Create',emoji:'✨',sub:'What do you like to make or explore?',body:<div><div className="flex flex-wrap gap-2 justify-center">{CREATE_INTEREST_OPTIONS.map(function(opt){var sel=(pp.createInterests||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('createInterests',opt.id,5);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>{(pp.createInterests||[]).indexOf('building_business')>=0&&<input type="text" value={pp.projectName||''} onChange={function(e){setPersonalizationProfile(function(p){return Object.assign({},p,{projectName:e.target.value});});}} placeholder="Project name (optional)" className="w-full max-w-[280px] mx-auto mt-3 bg-white rounded-[10px] border font-sans text-[12px] px-3 py-2" style={{borderColor:'rgba(0,0,0,0.08)'}}/>}</div>},
+      {title:'Mindset',emoji:'📚',sub:'What would help your headspace?',body:<div className="flex flex-wrap gap-2 justify-center">{mindsetNeedPick.map(function(opt){var sel=(pp.mindsetNeeds||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('mindsetNeeds',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+      {title:'Mindset',emoji:'📚',sub:'How do you like to learn?',body:<div className="flex flex-wrap gap-2 justify-center">{MINDSET_FORMAT_OPTIONS.map(function(opt){var sel=(pp.mindsetFormats||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('mindsetFormats',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+      {title:'Connect',emoji:'💛',sub:'Who matters most right now?',body:<div className="flex flex-wrap gap-2 justify-center">{CONNECT_TARGET_OPTIONS.map(function(opt){var sel=(pp.connectTargets||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('connectTargets',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+      {title:'Connect',emoji:'💛',sub:'How do you usually connect?',body:connectHowBody()},
+      {title:'Move',emoji:'🏃',sub:'How do you like to move?',body:<div className="flex flex-wrap gap-2 justify-center">{MOVE_PREF_OPTIONS.map(function(opt){var sel=(pp.movePreferences||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('movePreferences',opt.id,4);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+      {title:'Move',emoji:'🏃',sub:'How do you want movement to feel?',body:<div className="flex flex-wrap gap-2 justify-center">{MOVE_FEELING_OPTIONS.map(function(opt){var sel=(pp.moveDesiredFeelings||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('moveDesiredFeelings',opt.id,3);}} className={chipCls} style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+      {title:'Reset',emoji:'🌿',sub:'How do you recharge best? Pick up to 3.',body:<div className="space-y-2 max-w-[300px] mx-auto">{RESET_STYLE_OPTIONS.map(function(opt){var sel=(pp.resetStyles||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('resetStyles',opt.id,3);}} className="w-full text-left px-3 py-2 rounded-[12px] border" style={chipStyle(sel)}><span className="font-sans text-[12px] font-medium block">{opt.label}</span>{opt.desc&&<span className="font-sans text-[10px] opacity-55">{opt.desc}</span>}</button>;})}</div>}
     ];
     if(personalizeMode==='layer1'){
       var l1=[
@@ -2568,11 +2594,11 @@ function App(){
       </div>;
     }
     if(deepPersonalizationStep===0){
-      return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">Five fast screens so Pick for Me and Plan My Day feel more you. Skip any screen — or all of them.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip all</button></div>;
+      return <div className="text-center px-4"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[13px] text-body opacity-50 mb-6 max-w-[300px] mx-auto">A few quick screens so Pick for Me and Plan My Day feel more you. Skip any screen — or all of them.</p><button onClick={function(){setDeepPersonalizationStep(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className="block mx-auto mt-3 font-sans text-[11px] text-body opacity-40">Skip all</button></div>;
     }
-    var scr=screens[deepPersonalizationStep-1];
-    var isLast=deepPersonalizationStep>=5;
-    return <div className="text-center px-4"><p className="text-[24px] mb-1">{scr.emoji}</p><p className="font-serif text-[20px] text-headline italic mb-1">{scr.title}</p><p className="font-sans text-[10px] text-body opacity-35 mb-4">{deepPersonalizationStep} of 5</p>{scr.body}<div className="mt-6 flex flex-col items-center gap-2"><button onClick={function(){if(isLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>{isLast?'Finish':'Continue'}</button><button onClick={function(){if(isLast)finishDeepPersonalization(true);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[11px] text-body opacity-40 py-1">{isLast?'Skip & finish':'Skip'}</button></div></div>;
+    var scr=layer2Screens[deepPersonalizationStep-1];
+    var isLast=deepPersonalizationStep>=LAYER2_TOTAL;
+    return <div className="text-center px-4"><p className="text-[24px] mb-1">{scr.emoji}</p><p className="font-serif text-[20px] text-headline italic mb-1">{scr.title}</p><p className="font-sans text-[12px] text-body opacity-50 mb-4 max-w-[300px] mx-auto">{scr.sub}</p><p className="font-sans text-[10px] text-body opacity-35 mb-3">{deepPersonalizationStep} of {LAYER2_TOTAL}</p>{scr.body}<div className="mt-6 flex flex-col items-center gap-2"><button onClick={function(){if(isLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>{isLast?'Finish':'Continue'}</button><button onClick={function(){if(isLast)finishDeepPersonalization(true);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[11px] text-body opacity-40 py-1">{isLast?'Skip & finish':'Skip'}</button></div></div>;
   }
   function routeToPersonalization(){
     setShowPaywall(false);
@@ -3990,7 +4016,7 @@ function App(){
                       <span className="text-[16px]">{c.emoji}</span>
                       <div className="flex-1 min-w-0">
                         <span className="font-sans text-[12px] text-headline font-medium">{c.title.split(' ')[0]}</span>
-                        <p className="font-sans text-[10px] text-body opacity-50 truncate">{ideas.join(', ')}</p>
+                        <p className="font-sans text-[10px] text-body opacity-50 leading-snug">{ideas.join(', ')}</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-full" style={{background:'rgba(196,154,122,0.1)',border:'1px solid rgba(196,154,122,0.2)'}}>
                         <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="#C49A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7.5L6 10.5L11 4"/></svg>
@@ -4020,7 +4046,7 @@ function App(){
                       <span className="text-[16px]">{c.emoji}</span>
                       <div className="flex-1 min-w-0">
                         <span className="font-sans text-[12px] text-headline font-medium">{c.title.split(' ')[0]}</span>
-                        <p className="font-sans text-[10px] text-body opacity-40 truncate line-through">{ideas.join(', ')}</p>
+                        <p className="font-sans text-[10px] text-body opacity-40 leading-snug line-through">{ideas.join(', ')}</p>
                       </div>
                       <span className="check-pop text-[13px]" style={{color:'#4CAF50'}}>{'\u2714'}</span>
                     </div>
@@ -6756,9 +6782,9 @@ function App(){
         <p className="font-serif text-[18px] text-headline italic leading-snug mb-2">{pickForMeResult.composed.title}</p>
         {pickForMeResult.composed.reason&&<p className="font-sans text-[11px] text-body opacity-45 mb-4">{pickForMeResult.composed.reason}</p>}
         <div className="flex flex-col gap-2">
-          <button onClick={function(){acceptRecommendation(pickForMeResult.categoryId,pickForMeResult.composed.sourceText,pickForMeResult.composed.ideaId);}} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full" style={{background:'#C49A7A'}}>Add to my day</button>
+          <button onClick={function(){acceptRecommendation(pickForMeResult.categoryId,pickForMeResult.composed.title,pickForMeResult.composed.ideaId);}} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full" style={{background:'#C49A7A'}}>Add to my day</button>
           <button onClick={shufflePickForMe} className="w-full font-sans text-[13px] font-semibold py-3 rounded-full border" style={{borderColor:'rgba(196,154,122,0.4)',color:'#614433'}}>{'🎲'} Try another</button>
-          {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){var c=pickForMeResult.categoryId;setPickForMeResult(null);openPersonalizeFlow('layer2','pick',c);}} className="font-sans text-[11px] font-medium py-1.5" style={{color:'#C49A7A'}}>Make these fit even better — 5 quick questions</button>}
+          {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){var c=pickForMeResult.categoryId;setPickForMeResult(null);openPersonalizeFlow('layer2','pick',c);}} className="font-sans text-[11px] font-medium py-1.5" style={{color:'#C49A7A'}}>Make these fit even better — a few quick questions</button>}
           <button onClick={function(){setPickForMeResult(null);}} className="font-sans text-[11px] text-body opacity-40 py-1">Not now</button>
         </div>
       </div>
@@ -6773,14 +6799,14 @@ function App(){
         <div className="space-y-3 mb-4">{CARDS.map(function(c){var item=planMyDayResult[c.id];if(!item)return null;return <div key={c.id} className="rounded-[14px] px-3 py-3 border" style={{background:c.color,borderColor:c.borderColor}}>
           <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-body opacity-40 mb-1">{c.emoji} {c.title}</p>
           <p className="font-sans text-[13px] text-headline leading-snug mb-2">{item.title}</p>
-          <button onClick={function(){acceptRecommendation(c.id,item.sourceText,item.ideaId);}} className="font-sans text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{background:c.checkBg,color:'white'}}>Add</button>
+          <button onClick={function(){acceptRecommendation(c.id,item.title,item.ideaId);}} className="font-sans text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{background:c.checkBg,color:'white'}}>Add</button>
         </div>;})}</div>
         <button onClick={function(){
-          CARDS.forEach(function(c){var item=planMyDayResult[c.id];if(item)selectSingle(c.id,item.sourceText,false);});
+          CARDS.forEach(function(c){var item=planMyDayResult[c.id];if(item)selectSingle(c.id,item.title,false);});
           trackEvent('recommendation_accepted',{type:'plan_all'});
           setPlanMyDayResult(null);
         }} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full mb-2" style={{background:'#C49A7A'}}>Add all to my day</button>
-        {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){setPlanMyDayResult(null);openPersonalizeFlow('layer2','plan',null);}} className="w-full font-sans text-[11px] font-medium py-2" style={{color:'#C49A7A'}}>Make these fit even better — 5 quick questions</button>}
+        {!personalizationProfile.deepPersonalizationCompleted&&<button onClick={function(){setPlanMyDayResult(null);openPersonalizeFlow('layer2','plan',null);}} className="w-full font-sans text-[11px] font-medium py-2" style={{color:'#C49A7A'}}>Make these fit even better — a few quick questions</button>}
         <button onClick={function(){setPlanMyDayResult(null);}} className="w-full font-sans text-[11px] text-body opacity-40 py-2">Close</button>
       </div>
     </div>}

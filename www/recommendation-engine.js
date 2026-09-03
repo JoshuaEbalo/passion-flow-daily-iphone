@@ -89,6 +89,8 @@
       score += overlapScore(profile.connectTargets, idea.connectTargetTags || []);
       score += overlapScore(profile.partnerConnectionStyles, idea.connectionStyleTags || []);
       score += overlapScore(profile.friendConnectionStyles, idea.connectionStyleTags || []);
+      score += overlapScore(profile.familyConnectionStyles, idea.connectionStyleTags || []);
+      score += overlapScore(profile.communityConnectionStyles, idea.connectionStyleTags || []);
     }
     if (cat === 'move') {
       score += overlapScore(profile.movePreferences, idea.moveTypeTags || []);
@@ -105,7 +107,7 @@
     if (exclude.indexOf(idea.text) >= 0 || excludeIds.indexOf(idea.id) >= 0) return -9999;
     if (ctx.deleted && ctx.deleted.indexOf(idea.text) >= 0) return -9999;
     if (ctx.selected && ctx.selected.indexOf(idea.text) >= 0) return -9999;
-    if (ctx.recentShown && ctx.recentShown.indexOf(idea.id) >= 0) score -= 5;
+    if (ctx.recentShown && ctx.recentShown.indexOf(idea.id) >= 0) score -= ctx.shuffleMode ? 1 : 5;
     if (ctx.recentCompleted && ctx.recentCompleted.indexOf(idea.id) >= 0) score -= 6;
     if (ctx.saved && ctx.saved.indexOf(idea.text) >= 0) score += 4;
 
@@ -117,27 +119,33 @@
     return (index || []).filter(function (i) { return i.categoryId === categoryId; });
   }
 
-  function pickFromPool(pool, profile, ctx, count) {
+  function pickFromPool(pool, profile, ctx, count, opts) {
     count = count || 1;
+    opts = opts || {};
+    var shuffle = !!ctx.shuffleMode;
+    var topN = opts.topN || (shuffle ? 20 : Math.max(8, count * 3));
     var scored = pool.map(function (idea) {
       return { idea: idea, score: scoreIdea(idea, profile, ctx) };
     }).filter(function (x) { return x.score > -100; });
     scored.sort(function (a, b) { return b.score - a.score; });
-    var top = scored.slice(0, Math.max(5, count * 3));
+    var top = scored.slice(0, topN);
     var picks = [];
     var used = (ctx.excludeIds || []).slice();
     var usedText = (ctx.excludeTexts || []).slice();
+    var pickWindow = shuffle ? Math.min(top.length, topN) : Math.min(top.length, 8);
     for (var n = 0; n < count && top.length; n++) {
-      var idx = Math.floor(Math.random() * Math.min(top.length, 5));
+      var idx = Math.floor(Math.random() * Math.max(1, pickWindow));
       var chosen = top.splice(idx, 1)[0];
       if (!chosen) break;
       picks.push(chosen.idea);
       used.push(chosen.idea.id);
       usedText.push(chosen.idea.text);
       ctx = Object.assign({}, ctx, { excludeIds: used, excludeTexts: usedText });
-      top = top.map(function (x) {
-        return { idea: x.idea, score: scoreIdea(x.idea, profile, ctx) };
-      }).filter(function (x) { return x.score > -100; });
+      if (!shuffle) {
+        top = top.map(function (x) {
+          return { idea: x.idea, score: scoreIdea(x.idea, profile, ctx) };
+        }).filter(function (x) { return x.score > -100; });
+      }
     }
     return picks;
   }

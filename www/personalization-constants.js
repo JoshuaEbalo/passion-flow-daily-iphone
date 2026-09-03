@@ -168,6 +168,8 @@
       partnerConnectionStyles: [],
       partnerName: '',
       friendConnectionStyles: [],
+      familyConnectionStyles: [],
+      communityConnectionStyles: [],
       movePreferences: [],
       moveDesiredFeelings: [],
       resetStyles: [],
