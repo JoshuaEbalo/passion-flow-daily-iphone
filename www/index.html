@@ -2210,7 +2210,12 @@ function App(){
               var alreadyOnboarded=false;
               try{alreadyOnboarded=!!localStorage.getItem('pfd_onboarded');}catch(e){}
               if(authIsNewUserRef.current&&!hasPersonalizedFlow()){
-                routeToPersonalization();
+                if(doc.exists&&doc.data().isPro){
+                  routeToPersonalization();
+                }else{
+                  setShowOnboard(true);
+                  if(obStepRef.current<8)setObStep(8);
+                }
               }else if(!showOnboardRef.current&&!alreadyOnboarded){
                 setShowOnboard(true);setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());
               }
@@ -2352,6 +2357,16 @@ function App(){
     if(signals)payload.behaviorSignals=signals;
     window.db.collection('users').doc(uid).set(payload,{merge:true}).catch(function(){});
   }
+  function needsOnboardingPersonalization(){
+    return profileNeedsLayer1(personalizationProfile)&&!personalizationProfile.skippedAt;
+  }
+  function routeToOnboardingPersonalization(){
+    setShowPaywall(false);
+    setShowOnboard(true);
+    setObStep(9);
+    setObSub(0);
+    if(!personalizationProfile||!personalizationProfile.version)setPersonalizationProfile(createEmptyPersonalizationProfile());
+  }
   function finishPersonalizationFlow(profile,wasSkipped){
     var next=Object.assign({},profile,{version:3,updatedAt:Date.now()});
     if(wasSkipped){next.skippedAt=Date.now();}else{next.completedAt=Date.now();next.skippedAt=null;}
@@ -2359,10 +2374,6 @@ function App(){
     markPersonalized();
     savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
     trackEvent(wasSkipped?'personalization_skipped':'onboarding_layer1_complete',{goals:(next.overallGoals||[]).length,frictions:(next.coreFrictions||[]).length});
-    if(isPro){
-      setShowOnboard(false);
-      return;
-    }
     setTimeout(function(){setObStep(10);setObBuilding(true);setTimeout(function(){setObBuilding(false);setObStep(11);setObDone(true);trackEvent('onboarding_completed');},2200);},300);
   }
   function savePersonalizationFromSettings(){
@@ -2601,10 +2612,7 @@ function App(){
     return <div className="text-center px-4"><p className="text-[24px] mb-1">{scr.emoji}</p><p className="font-serif text-[20px] text-headline italic mb-1">{scr.title}</p><p className="font-sans text-[12px] text-body opacity-50 mb-4 max-w-[300px] mx-auto">{scr.sub}</p><p className="font-sans text-[10px] text-body opacity-35 mb-3">{deepPersonalizationStep} of {LAYER2_TOTAL}</p>{scr.body}<div className="mt-6 flex flex-col items-center gap-2"><button onClick={function(){if(isLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full" style={{background:'#C49A7A'}}>{isLast?'Finish':'Continue'}</button><button onClick={function(){if(isLast)finishDeepPersonalization(true);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className="font-sans text-[11px] text-body opacity-40 py-1">{isLast?'Skip & finish':'Skip'}</button></div></div>;
   }
   function routeToPersonalization(){
-    setShowPaywall(false);
-    setShowOnboard(true);
-    setObStep(9);
-    setObSub(0);
+    routeToOnboardingPersonalization();
   }
   function shouldShowPaywallGate(){
     return hasPersonalizedFlow()||obStepRef.current>=11;
@@ -2612,6 +2620,11 @@ function App(){
   function applyPaywallOrPersonalize(isProKnown){
     if(isProKnown){
       setShowPaywall(false);
+      if(needsOnboardingPersonalization()){
+        routeToOnboardingPersonalization();
+        return;
+      }
+      if(showOnboardRef.current&&obStepRef.current>=9&&obStepRef.current<=11)return;
       setShowOnboard(false);
       return;
     }
@@ -2714,8 +2727,14 @@ function App(){
     var uid=(firebase.auth().currentUser&&firebase.auth().currentUser.uid)||(currentUser&&currentUser.uid);
     setIsPro(true);
     setShowPaywall(false);
-    setShowOnboard(false);
-    try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+    if(needsOnboardingPersonalization()){
+      routeToOnboardingPersonalization();
+    }else if(showOnboardRef.current&&obStepRef.current>=9&&obStepRef.current<=11){
+      setShowOnboard(true);
+    }else{
+      setShowOnboard(false);
+      try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+    }
     if(uid){
       try{localStorage.removeItem('pfd_pending_pro');}catch(e){}
       if(fromSimulate)markDevPro(uid);
@@ -3414,10 +3433,17 @@ function App(){
     return function(){clearTimeout(t);};
   },[obStep,obSub]);
 
-  // Auto-advance onboarding after sign-in at step 8
+  // After sign-in at demo: paywall first if not Pro, otherwise Layer 1 questions
   useEffect(function(){
-    if(currentUser&&showOnboard&&obStep===8){setShowAuth(false);setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());}
-  },[currentUser]);
+    if(currentUser&&showOnboard&&obStep===8){
+      setShowAuth(false);
+      if(isPro){
+        setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());
+      }else{
+        setShowPaywall(true);
+      }
+    }
+  },[currentUser,isPro,showOnboard,obStep]);
 
   // NOTE: ?subscribed=true URL param handling intentionally removed.
   // isPro in Firestore is set by revenuecat-webhook / stripe-webhook (Admin SDK).
@@ -3730,7 +3756,7 @@ function App(){
   useEffect(function(){
     if(currentUser&&userLoaded&&isPro){
       setShowPaywall(false);
-      if(showOnboard&&obStep===9)return;
+      if(showOnboard&&obStep>=9&&obStep<=11)return;
       if(showOnboard)setShowOnboard(false);
     }else if(currentUser&&userLoaded&&!isPro&&!showOnboard&&!showAuth&&!showSplash&&!showLanding){
       if(shouldShowPaywallGate())setShowPaywall(true);
@@ -6362,7 +6388,7 @@ function App(){
           </div>
 
           </div>
-          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else{setObStep(9);}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
+          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else if(isPro){setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());}else{setShowPaywall(true);}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
           </div>;
         })()}
 
@@ -6441,7 +6467,7 @@ function App(){
             </div>
           </div>
 
-          <button onClick={function(){localStorage.setItem('pfd_onboarded','1');if(isPro){setShowOnboard(false);}else{setShowPaywall(true);}}} className="ob-fade-up font-sans text-[14px] font-semibold text-white px-10 py-3.5 rounded-full active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>{isPro?'Start my daily flow':'Start my daily flow'}</button>
+          <button onClick={function(){localStorage.setItem('pfd_onboarded','1');setShowOnboard(false);}} className="ob-fade-up font-sans text-[14px] font-semibold text-white px-10 py-3.5 rounded-full active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Start my daily flow</button>
         </div>}
 
       </div>
