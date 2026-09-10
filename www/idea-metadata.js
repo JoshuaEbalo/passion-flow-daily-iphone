@@ -45,46 +45,115 @@
   };
 
   var PACK_CREATE_TAGS = {
-    Art: ['art_crafts'], Writing: ['writing'], Photography: ['photography'],
+    Art: ['art_crafts'], Writing: ['writing'], Write: ['writing'], Photography: ['photography'],
     Crafts: ['art_crafts', 'diy_design'], DIY: ['diy_design'], Build: ['building_business'],
     Code: ['building_business'], Design: ['diy_design'], 'DIY Projects': ['diy_design'],
-    Launch: ['building_business'], Dance: ['music']
+    Launch: ['building_business'], Dance: ['music'], Music: ['music'], Make: ['art_crafts', 'diy_design'],
+    Explore: ['creative_discovery'], Cooking: ['cooking_baking'], Drawing: ['art_crafts'],
+    Language: ['creative_discovery'], Instrument: ['music'], Vision: ['building_business'],
+    Planning: ['building_business'], Building: ['building_business'], Portfolio: ['content_creation'],
+    Content: ['content_creation'], Fashion: ['fashion_beauty'], Beauty: ['fashion_beauty']
+  };
+
+  var PACK_ID_CREATE = {
+    'build-something': ['building_business'],
+    'dream-projects': ['building_business']
   };
 
   var PACK_MINDSET_NEED = {
-    Mindset: ['presence', 'direction'], Productivity: ['motivation'], Confidence: ['confidence'],
-    Learning: ['direction'], Reading: ['presence']
+    Journaling: ['overthinking', 'presence'], 'Self-Reflection': ['overthinking', 'self_trust', 'negative_self_talk'],
+    Goals: ['direction', 'decision_making'], Clarity: ['overthinking', 'mental_overwhelm'],
+    Growth: ['direction'], Gratitude: ['presence', 'negative_self_talk'],
+    Appreciation: ['comparison', 'negative_self_talk'], Abundance: ['comparison'],
+    Joy: ['presence'], Presence: ['presence'], Meditation: ['presence', 'mental_overwhelm', 'overthinking'],
+    Breathing: ['mental_overwhelm', 'presence'], Awareness: ['presence', 'overthinking'],
+    Focus: ['mental_overwhelm'], Stillness: ['mental_overwhelm', 'presence'],
+    Habits: ['motivation'], Mindset: ['negative_self_talk', 'self_trust'],
+    Confidence: ['confidence'], Values: ['direction', 'self_trust'], Purpose: ['direction'],
+    Reading: ['presence'], Podcasts: ['motivation'], Video: ['motivation'], Documentary: ['motivation'],
+    Study: ['direction'], Research: ['direction']
   };
 
   var PACK_MINDSET_FORMAT = {
-    Learning: ['learning'], Reading: ['books'], Mindset: ['mindfulness', 'reflection_prompts'],
-    Productivity: ['articles'], Confidence: ['videos']
+    Reading: ['books'], Podcasts: ['podcasts'], Video: ['videos'], Documentary: ['documentaries'],
+    Research: ['articles'], Study: ['learning'], Journaling: ['journaling'],
+    'Self-Reflection': ['reflection_prompts'], Goals: ['reflection_prompts'],
+    Clarity: ['reflection_prompts'], Growth: ['reflection_prompts'],
+    Gratitude: ['journaling'], Appreciation: ['journaling'],
+    Abundance: ['journaling'], Joy: ['journaling'],
+    Presence: ['mindfulness'], Meditation: ['mindfulness'], Breathing: ['mindfulness'],
+    Awareness: ['mindfulness'], Focus: ['mindfulness'], Stillness: ['mindfulness'],
+    Habits: ['learning'], Mindset: ['reflection_prompts'], Confidence: ['reflection_prompts'],
+    Values: ['reflection_prompts'], Purpose: ['reflection_prompts']
+  };
+
+  var PACK_ID_LEARN = {
+    'learn-expand': [],
+    reflect: [],
+    gratitude: [],
+    mindfulness: ['mindfulness'],
+    'personal-growth': []
   };
 
   var PACK_CONNECT = {
-    Friends: ['friends'], Family: ['family'], Romance: ['partner'],
-    Community: ['community'], Social: ['community']
+    Friends: ['friends'], Family: ['family'], Romance: ['partner'], Partner: ['partner'],
+    Community: ['community'], Social: ['community'], Hangout: ['friends'], Messages: ['friends'],
+    Fun: ['friends'], Reconnect: ['friends'], Traditions: ['family'], Memories: ['family'],
+    'Deeper Connection': ['partner'], Neighbors: ['community'],
+    Kindness: ['community'], Service: ['community'], Belonging: ['community']
+  };
+
+  var PACK_ID_CONNECT = {
+    friends: ['friends'],
+    family: ['family'],
+    relationships: ['partner'],
+    community: ['community'],
+    'nature-connect': ['self']
   };
 
   var PACK_CONNECT_STYLE = {
-    Romance: ['cozy', 'deep_conversation'], Friends: ['catching_up', 'low_key'],
-    Family: ['catching_up'], Community: ['trying_new']
+    Romance: ['cozy', 'date_night'], Partner: ['date_night'], 'Deeper Connection': ['deep_conversation'],
+    Hangout: ['low_key'], Messages: ['catching_up'], Fun: ['trying_new'], Reconnect: ['catching_up'],
+    'Quality Time': ['low_key'], Traditions: ['catching_up'], Memories: ['catching_up']
   };
 
+  /* Keys must match idea.tag values in FOCUS_PACKS, not pack titles. */
   var PACK_MOVE = {
-    Cardio: ['running', 'walking'], Strength: ['strength'], Yoga: ['yoga_stretch'],
-    Outdoors: ['hiking', 'walking'], Sports: ['sports'], Dance: ['dance']
+    Running: ['running'], Walking: ['walking'], Hiking: ['hiking'],
+    Sports: ['sports'], Dance: ['dance'], Yoga: ['yoga_stretch'],
+    Stretching: ['yoga_stretch'], Breathwork: ['yoga_stretch'], Recovery: ['yoga_stretch'],
+    'Upper Body': ['strength'], 'Lower Body': ['strength'], 'Full Body': ['strength'],
+    Core: ['strength'], Pilates: ['fitness_classes', 'strength'], HIIT: ['fitness_classes'],
+    Challenges: ['sports'],
+    Water: ['hiking'], Exploring: ['hiking']
   };
 
   var PACK_MOVE_FEELING = {
-    Cardio: ['energizing'], Strength: ['strong'], Yoga: ['calming'],
-    Outdoors: ['calming', 'playful'], Dance: ['playful'], Sports: ['challenging']
+    Running: ['energizing'], Walking: ['calming'], Hiking: ['calming', 'playful'],
+    Sports: ['challenging', 'playful'], Dance: ['playful'], Yoga: ['calming'],
+    Stretching: ['calming'], Breathwork: ['calming'], Recovery: ['calming'],
+    'Upper Body': ['strong'], 'Lower Body': ['strong'], 'Full Body': ['strong'],
+    Core: ['strong'], Pilates: ['strong'], HIIT: ['energizing', 'challenging'],
+    Challenges: ['challenging']
   };
 
   var PACK_RESET = {
-    Rest: ['rest_reset'], Organization: ['space_reset'], Nourishment: ['nourishing_reset'],
-    'Self-care': ['self_care'], Wellness: ['self_care'], Digital: ['offline_reset'],
-    Nature: ['nature_reset']
+    Rest: ['rest_reset'], Ritual: ['self_care'], Skin: ['self_care'], Beauty: ['self_care'],
+    Relax: ['self_care'], Clean: ['space_reset'], Organize: ['space_reset'], Declutter: ['space_reset'],
+    Refresh: ['space_reset'], Hygge: ['self_care', 'space_reset'], Cook: ['nourishing_reset'],
+    Hydrate: ['nourishing_reset'], Nutrition: ['nourishing_reset'], 'Gut Health': ['nourishing_reset'],
+    Energy: ['nourishing_reset'], Unplug: ['offline_reset'], Offline: ['offline_reset'],
+    'Screen-Free': ['offline_reset'], Simplify: ['offline_reset'], Focus: ['offline_reset'],
+    Adventure: ['solo_reset'], Creative: ['solo_reset'], Mindful: ['solo_reset'],
+    Social: ['solo_reset'], Movement: ['solo_reset'], Nature: ['nature_reset']
+  };
+
+  var PACK_ID_NOURISH = {
+    'self-care': ['self_care'],
+    'home-reset': ['space_reset'],
+    'nourish-body': ['nourishing_reset'],
+    'digital-detox': ['offline_reset'],
+    'solo-side-quests': ['solo_reset']
   };
 
   var V2_TO_V3_GOAL = {
@@ -233,18 +302,30 @@
       if (/produc|beat|mix/.test(t)) subtypes.push('producing');
     }
     if (/business|side hustle|launch|startup/.test(t)) create.push('building_business');
-    if (/diy|build|make|design/.test(t)) create.push('diy_design');
+    if (/\b(diy|furniture|shelf)\b/.test(t)) create.push('diy_design');
+    if (/outfit|makeup|fashion|wardrobe|getting ready/.test(t)) create.push('fashion_beauty');
 
-    if (/overthink|decision|choose/.test(t)) mindsetNeed.push('overthinking', 'decision_making');
-    if (/confidence|believe in yourself/.test(t)) mindsetNeed.push('confidence');
-    if (/motivat/.test(t)) mindsetNeed.push('motivation');
-    if (/present|mindful|breath/.test(t)) mindsetNeed.push('presence');
     if (/book|read/.test(t)) mindsetFormat.push('books');
-    if (/podcast|audio|listen/.test(t)) mindsetFormat.push('podcasts');
-    if (/journal|write down|reflect/.test(t)) mindsetFormat.push('journaling');
-    if (/video|watch|talk|ted/.test(t)) mindsetFormat.push('videos');
+    if (/podcast|audiobook/.test(t) || (/listen/.test(t) && /podcast|audio|episode/.test(t))) mindsetFormat.push('podcasts');
+    if (/journal|write down|reflect|morning pages/.test(t)) mindsetFormat.push('journaling');
+    if (/article|essay|newsletter|wikipedia/.test(t)) mindsetFormat.push('articles');
     if (/learn|study|course|research/.test(t)) mindsetFormat.push('learning');
-    if (/documentary/.test(t)) mindsetFormat.push('documentaries');
+    if (/documentary|docuseries/.test(t)) {
+      mindsetFormat.push('documentaries');
+    } else if (/ted talk|masterclass|youtube|lecture|conference talk/.test(t)) {
+      mindsetFormat.push('videos');
+    } else if (/\bwatch\b/.test(t) && !/candle|sunset|sunrise|flame|tide|water/.test(t)) {
+      mindsetFormat.push('videos');
+    }
+    if (/\b(meditat|mindful|breathwork|stillness|body scan)\b/.test(t)) mindsetFormat.push('mindfulness');
+    if (/prompt|values|mission|belief/.test(t)) mindsetFormat.push('reflection_prompts');
+    if (/overthink|decision|choose/.test(t)) mindsetNeed.push('overthinking', 'decision_making');
+    if (/confidence|believe in yourself|comfort zone/.test(t)) mindsetNeed.push('confidence');
+    if (/motivat/.test(t)) mindsetNeed.push('motivation');
+    if (/present|mindful|breath|stillness/.test(t)) mindsetNeed.push('presence');
+    if (/overwhelm|stress|spiral/.test(t)) mindsetNeed.push('mental_overwhelm');
+    if (/direction|purpose|values|mission/.test(t)) mindsetNeed.push('direction');
+    if (/self-talk|limiting belief|playing small/.test(t)) mindsetNeed.push('negative_self_talk', 'self_trust');
 
     if (/partner|date|romantic/.test(t)) connect.push('partner');
     if (/friend/.test(t)) connect.push('friends');
@@ -258,25 +339,26 @@
     if (/catch up|text|call|voice note/.test(t)) connStyle.push('catching_up');
     if (/low-key|hang/.test(t)) connStyle.push('low_key');
 
-    if (/walk|stroll/.test(t)) move.push('walking');
-    if (/run|jog/.test(t)) move.push('running');
-    if (/strength|push-up|weight|lift/.test(t)) move.push('strength');
-    if (/yoga|stretch/.test(t)) move.push('yoga_stretch');
-    if (/dance/.test(t)) move.push('dance');
-    if (/hike|trail|nature/.test(t)) move.push('hiking');
-    if (/sport|game|basketball|tennis/.test(t)) move.push('sports');
+    if (/\b(run|running|jog|jogging|sprints?)\b/.test(t)) move.push('running');
+    if (/\b(hike|hiking|trail)\b/.test(t) || (/\bnature\b/.test(t) && /\b(outdoor|outside|forest|mountain|woods)\b/.test(t))) move.push('hiking');
+    if (/\b(walk|walking|stroll|steps)\b/.test(t) && move.indexOf('running') < 0 && move.indexOf('hiking') < 0) move.push('walking');
+    if (/\b(strength|push-ups?|weight|lift|dumbbell|resistance band|pull-ups?)\b/.test(t)) move.push('strength');
+    if (/\b(yoga|stretch|stretching|pilates)\b/.test(t)) move.push('yoga_stretch');
+    if (/\b(dance|dancing|zumba|salsa|bachata|hip-hop)\b/.test(t)) move.push('dance');
+    if (/\b(pickleball|basketball|tennis|soccer|volleyball|badminton|frisbee|baseball|softball|football|hockey|lacrosse|golf|bowling|sport|sports)\b/.test(t)) move.push('sports');
+    if (/\b(class|barre|spin class|fitness class|crossfit)\b/.test(t)) move.push('fitness_classes');
     if (/energiz/.test(t)) moveFeel.push('energizing');
     if (/calm|slow|gentle/.test(t)) moveFeel.push('calming');
     if (/playful|fun/.test(t)) moveFeel.push('playful');
     if (/strong|power/.test(t)) moveFeel.push('strong');
 
-    if (/shower|skincare|self-care|cozy/.test(t)) reset.push('self_care');
-    if (/clean|organiz|tidy|declutter/.test(t)) reset.push('space_reset');
-    if (/outside|sun|nature|fresh air/.test(t)) reset.push('nature_reset');
-    if (/café|bookstore|wander|yourself somewhere/.test(t)) reset.push('solo_reset');
-    if (/phone away|offline|unplug|no screen/.test(t)) reset.push('offline_reset');
-    if (/nap|rest|lie down|nothing/.test(t)) reset.push('rest_reset');
-    if (/tea|coffee|meal|drink|nourish|cook something/.test(t)) reset.push('nourishing_reset');
+    if (/shower|skincare|self-care|cozy|bath|spa|manicure|face mask/.test(t)) reset.push('self_care');
+    if (/clean|organiz|tidy|declutter|reorganize/.test(t)) reset.push('space_reset');
+    if (/outside|sun|nature|fresh air|garden|park|trail|beach|hike|ocean|lake/.test(t)) reset.push('nature_reset');
+    if (/café|bookstore|wander|yourself somewhere|solo|alone/.test(t)) reset.push('solo_reset');
+    if (/phone away|offline|unplug|no screen|no social|screen-free/.test(t)) reset.push('offline_reset');
+    if (/\b(nap|rest|lie down|do nothing|doing absolutely nothing)\b/.test(t)) reset.push('rest_reset');
+    if (/\b(tea|coffee|meal|smoothie|cook|recipe|hydrate|nourish)\b/.test(t)) reset.push('nourishing_reset');
 
     return {
       createInterestTags: create, createSubtypeTags: subtypes,
@@ -322,15 +404,15 @@
     var prodHeavy = isProductivityHeavy(text, packTag);
 
     var heur = tagsFromTextHeuristics(text, categoryId);
-    var createInterestTags = mergeTags(PACK_CREATE_TAGS[packTag] || [], heur.createInterestTags);
+    var createInterestTags = mergeTags(mergeTags(PACK_CREATE_TAGS[packTag] || [], PACK_ID_CREATE[packId] || []), heur.createInterestTags);
     var createSubtypeTags = heur.createSubtypeTags.slice();
     var mindsetNeedTags = mergeTags(PACK_MINDSET_NEED[packTag] || [], heur.mindsetNeedTags);
-    var mindsetFormatTags = mergeTags(PACK_MINDSET_FORMAT[packTag] || [], heur.mindsetFormatTags);
-    var connectTargetTags = mergeTags(PACK_CONNECT[packTag] || [], heur.connectTargetTags);
+    var mindsetFormatTags = mergeTags(mergeTags(PACK_MINDSET_FORMAT[packTag] || [], PACK_ID_LEARN[packId] || []), heur.mindsetFormatTags);
+    var connectTargetTags = mergeTags(mergeTags(PACK_CONNECT[packTag] || [], PACK_ID_CONNECT[packId] || []), heur.connectTargetTags);
     var connectionStyleTags = mergeTags(PACK_CONNECT_STYLE[packTag] || [], heur.connectionStyleTags);
     var moveTypeTags = mergeTags(PACK_MOVE[packTag] || [], heur.moveTypeTags);
     var moveFeelingTags = mergeTags(PACK_MOVE_FEELING[packTag] || [], heur.moveFeelingTags);
-    var resetStyleTags = mergeTags(PACK_RESET[packTag] || [], heur.resetStyleTags);
+    var resetStyleTags = mergeTags(mergeTags(PACK_RESET[packTag] || [], PACK_ID_NOURISH[packId] || []), heur.resetStyleTags);
 
     var meta = {
       id: stableIdeaId(categoryId, packId, text),

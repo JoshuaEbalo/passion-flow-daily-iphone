@@ -133,13 +133,13 @@
   ];
 
   var RESET_STYLE_OPTIONS = [
-    { id: 'self_care', label: 'Self-care reset', desc: 'Long shower, skincare, getting cozy.' },
-    { id: 'space_reset', label: 'Space reset', desc: 'Clean up, fresh sheets, organize something.' },
-    { id: 'nature_reset', label: 'Nature reset', desc: 'Go outside, get sunlight, be somewhere quiet.' },
-    { id: 'solo_reset', label: 'Solo reset', desc: 'Take yourself somewhere, grab something you like, wander.' },
-    { id: 'offline_reset', label: 'Offline reset', desc: 'Phone away, read, color, or do something without extra input.' },
-    { id: 'rest_reset', label: 'Rest reset', desc: 'Slow down, lie down, nap, or do absolutely nothing.' },
-    { id: 'nourishing_reset', label: 'Nourishing reset', desc: 'Make a drink or meal and slow down enough to enjoy it.' }
+    { id: 'self_care', label: 'Self-care: shower, skincare, get cozy' },
+    { id: 'space_reset', label: 'Space reset: tidy up, fresh sheets' },
+    { id: 'nature_reset', label: 'Nature reset: outside, sunlight, quiet' },
+    { id: 'solo_reset', label: 'Solo outing: treat yourself, wander' },
+    { id: 'offline_reset', label: 'Offline reset: phone away, read or color' },
+    { id: 'rest_reset', label: 'Rest reset: lie down, nap, do nothing' },
+    { id: 'nourishing_reset', label: 'Nourishing reset: make a drink or meal, savor it' }
   ];
 
   var CATEGORY_IDS = ['create', 'learn', 'connect', 'move', 'nourish'];
@@ -160,6 +160,7 @@
       createArtSubtypes: [],
       createBuildingType: null,
       projectName: '',
+      projectNames: [],
       mindsetNeeds: [],
       mindsetFormats: [],
       connectTargets: [],
@@ -167,6 +168,8 @@
       partnerName: '',
       friendNames: [],
       familyNames: [],
+      communityNames: [],
+      communityName: '',
       friendConnectionStyles: [],
       familyConnectionStyles: [],
       communityConnectionStyles: [],
@@ -228,7 +231,14 @@
     p.socialPreference = profile.socialPreference || null;
     p.preferredDaypart = profile.preferredDaypart || null;
     p.partnerName = profile.partnerName || '';
+    p.communityName = profile.communityName || '';
+    p.communityNames = (profile.communityNames || []).slice();
+    if (!p.communityNames.length && p.communityName) p.communityNames = [p.communityName];
+    if (!p.communityName && p.communityNames.length) p.communityName = p.communityNames[0] || '';
     p.projectName = profile.projectName || '';
+    p.projectNames = (profile.projectNames || []).slice();
+    if (!p.projectNames.length && p.projectName) p.projectNames = [p.projectName];
+    if (!p.projectName && p.projectNames.length) p.projectName = p.projectNames[0] || '';
     if (profile.categoryGoals) {
       var cg = profile.categoryGoals;
       var createMap = { art: 'art_crafts', writing: 'writing', content: 'content_creation', building: 'building_business', photography: 'photography' };

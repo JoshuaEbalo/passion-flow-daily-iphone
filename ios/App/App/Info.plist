@@ -66,5 +66,7 @@
 	<string>Passion Flow Daily saves your day cards to your photo library when you tap Save Image.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Passion Flow Daily transcribes your voice memos so they can be saved as text in your daily reflection journal.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Passion Flow Daily sends gentle reminders when your personalized Daily Flow is ready.</string>
 </dict>
 </plist>

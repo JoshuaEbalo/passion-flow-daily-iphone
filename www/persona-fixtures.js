@@ -54,7 +54,7 @@
       defaultTimeBucket: 'medium',
       createInterests: ['building_business', 'content_creation'],
       createBuildingType: 'side_hustle',
-      projectName: 'my startup',
+      projectNames: ['my startup'],
       mindsetNeeds: ['decision_making', 'motivation'],
       mindsetFormats: ['learning', 'podcasts'],
       deepPersonalizationCompleted: true,

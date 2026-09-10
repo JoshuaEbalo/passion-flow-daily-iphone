@@ -1,5 +1,10 @@
 {
   "appId": "com.passionflowdaily.app",
   "appName": "Passion Flow Daily",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "presentationOptions": ["badge", "sound", "banner", "list"]
+    }
+  }
 }

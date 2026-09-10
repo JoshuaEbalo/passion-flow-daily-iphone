@@ -11,12 +11,17 @@ firebase-adminsdk*.json
 node_modules/
 
 # iOS build artifacts
+build/
 ios/App/build/
 ios/App/Pods/
 ios/App/output/
 ios/App/App/public/
 ios/DerivedData/
 ios/**/*.xcuserstate
+
+# Local tooling
+.claude/
+.netlify/
 
 # macOS
 .DS_Store

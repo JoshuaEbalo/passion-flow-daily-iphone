@@ -24,6 +24,11 @@
       'Put on three songs you love and dance through all three.',
       'Move your body to music you enjoy for {duration}, no choreography required.'
     ],
+    run: ['{text}'],
+    hike: ['{text}'],
+    sports_move: ['{text}'],
+    strength_move: ['{text}'],
+    fitness_move: ['{text}'],
     partner_food: [
       'Ask {partner} to grab something small with you later and keep your phones away while you are there.',
       'Invite {partner} for a quick treat together, phones down for the first 15 minutes.'
@@ -72,6 +77,16 @@
       'Say yes to one small social thing this week, even if it feels slightly outside your comfort zone.',
       'Put yourself near people for a bit, a class, event, or casual hang where you might meet someone new.'
     ],
+    community_keep: ['{text}'],
+    community_named: [
+      'Make simple plans with {community} this week, nothing fancy.',
+      'Show up for {community} and stay a little longer than usual.',
+      'Spend time with {community} without checking your phone the whole time.',
+      'Reach out to {community} and set one real hang this week.'
+    ],
+    partner_keep: ['Do this with {partner}: {text}'],
+    friend_keep: ['Do this with {friend}: {text}'],
+    family_keep: ['Do this with {family}: {text}'],
     business_contained: [
       'Give {project} {duration}. Improve one small thing you already care about, no competitor research, no new tabs.',
       'Spend {duration} on {project}. One small thing only, no research, no optimizing the whole vision.'
@@ -79,6 +94,15 @@
     business_fun: [
       'Spend {duration} making one small thing for {project} without checking competitors or analytics.',
       'Work on {project} for {duration}, make something imperfect and stop when the timer ends.'
+    ],
+    create_named: [
+      'For {project}: {text}',
+      'Use this for {project}: {text}'
+    ],
+    project_any: [
+      'Spend {duration} on {project}. One small next step only.',
+      'Work on {project} for {duration}. Make one imperfect thing and stop when the timer ends.',
+      'Give {project} {duration}. Do the next tiny step you already know.'
     ],
     create_play: [
       'Spend {duration} making something small with no intention of turning it into anything useful.',
@@ -156,6 +180,22 @@
     return n || 'your partner';
   }
 
+  function uniqueTrimmedNames(list) {
+    var unique = [];
+    (list || []).forEach(function (n) {
+      n = (n || '').trim();
+      if (n && unique.indexOf(n) < 0) unique.push(n);
+    });
+    return unique;
+  }
+
+  function pickRotatedName(list, pick, fallback) {
+    var unique = uniqueTrimmedNames(list);
+    if (!unique.length) return fallback;
+    var idx = typeof pick === 'number' ? Math.abs(pick) : 0;
+    return unique[idx % unique.length];
+  }
+
   function friendLabel(profile, seed) {
     return rotateName(profile.friendNames, seed, 'a friend');
   }
@@ -164,9 +204,227 @@
     return rotateName(profile.familyNames, seed, 'someone in your family');
   }
 
-  function projectLabel(profile) {
-    var n = (profile.projectName || '').trim();
-    return n || 'your project';
+  var PROJECT_NAME_STOP = { project: 1, projects: 1, my: 1, the: 1, and: 1, for: 1, making: 1, make: 1, a: 1, an: 1, of: 1, thing: 1, things: 1, work: 1, idea: 1, ideas: 1, stuff: 1, new: 1, personal: 1, side: 1 };
+  var PROJECT_TYPE_RULES = [
+    { re: /sew|quilt|embroider|cross.?stitch/, interests: ['art_crafts'], hints: ['sew', 'quilt', 'fabric', 'alter', 'embroider', 'stitch', 'hem', 'garment'] },
+    { re: /knit|crochet/, interests: ['art_crafts'], hints: ['knit', 'crochet', 'yarn'] },
+    { re: /pottery|ceramic/, interests: ['art_crafts'], hints: ['pottery', 'ceramic', 'clay'] },
+    { re: /jewelr|bead/, interests: ['art_crafts', 'fashion_beauty'], hints: ['jewel', 'bead'] },
+    { re: /origami|collage/, interests: ['art_crafts'], hints: ['origami', 'collage'] },
+    { re: /paint|watercolor/, interests: ['art_crafts'], hints: ['paint', 'watercolor', 'canvas'] },
+    { re: /draw|sketch|illustration/, interests: ['art_crafts'], hints: ['draw', 'sketch', 'illustration'] },
+    { re: /\bcrafts?\b/, interests: ['art_crafts'], hints: ['craft'] },
+    { re: /\bart\b/, interests: ['art_crafts'], hints: [] },
+    { re: /cook|recipe|cookbook|bake|bakery|pastry/, interests: ['cooking_baking'], hints: ['cook', 'recipe', 'bake', 'cookbook', 'pastry'] },
+    { re: /photo|photograph|cinema|camera/, interests: ['photography'], hints: ['photo', 'photograph', 'camera'] },
+    { re: /\bfilms?\b|\bvlog/, interests: ['photography', 'content_creation'], hints: ['film', 'vlog'] },
+    { re: /song|album|music|band|sing|guitar|piano|beat|producer/, interests: ['music'], hints: ['song', 'music', 'sing', 'guitar', 'piano', 'album'] },
+    { re: /novel|poem|story|zine|essay|memoir|script/, interests: ['writing'], hints: ['chapter', 'poem', 'story', 'draft', 'script', 'novel', 'essay'] },
+    { re: /\bbooks?\b|journal/, interests: ['writing'], hints: ['journal', 'book'] },
+    { re: /code|coding|software|saas|\bapps?\b|website|web ?app|program|github|developer/, interests: ['building_business'], hints: ['code', 'coding', 'software', 'website', 'github'] },
+    { re: /brand|branding/, interests: ['building_business', 'content_creation'], hints: ['brand', 'logo'] },
+    { re: /startup|etsy|\bshop\b|company|store/, interests: ['building_business'], hints: ['startup', 'shop', 'etsy'] },
+    { re: /business/, interests: ['building_business'], hints: ['business'] },
+    { re: /youtube|tiktok|instagram|newsletter|podcast/, interests: ['content_creation'], hints: ['youtube', 'tiktok', 'instagram', 'newsletter', 'podcast'] },
+    { re: /content|channel|creator/, interests: ['content_creation'], hints: ['content', 'channel'] },
+    { re: /fashion|outfit|wardrobe|makeup|beauty/, interests: ['fashion_beauty'], hints: ['fashion', 'outfit', 'makeup', 'beauty', 'wardrobe'] },
+    { re: /diy|renovat|woodwork|furniture|interior/, interests: ['diy_design'], hints: ['diy', 'furniture', 'renovat', 'woodwork'] },
+    { re: /\bdesign\b/, interests: ['diy_design', 'content_creation'], hints: ['design'] }
+  ];
+
+  function projectNameWords(name) {
+    return (name || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(function (w) {
+      return w.length > 2 && !PROJECT_NAME_STOP[w];
+    });
+  }
+
+  function projectAffinities(name) {
+    var t = (name || '').toLowerCase();
+    var out = [];
+    PROJECT_TYPE_RULES.forEach(function (rule) {
+      if (!rule.re.test(t)) return;
+      rule.interests.forEach(function (id) {
+        if (out.indexOf(id) < 0) out.push(id);
+      });
+    });
+    return out;
+  }
+
+  function projectHintTokens(name) {
+    var t = (name || '').toLowerCase();
+    var out = projectNameWords(name);
+    PROJECT_TYPE_RULES.forEach(function (rule) {
+      if (!rule.re.test(t)) return;
+      rule.hints.forEach(function (h) {
+        if (out.indexOf(h) < 0) out.push(h);
+      });
+    });
+    return out;
+  }
+
+  function ideaTextMatchesProject(idea, name) {
+    var text = ((idea && idea.text) || '').toLowerCase();
+    if (!text) return false;
+    return projectHintTokens(name).some(function (token) {
+      return token.length > 2 && text.indexOf(token) >= 0;
+    });
+  }
+
+  function ideaCreatePrimary(idea, profile) {
+    if (global.PFDRecommendationEngine && global.PFDRecommendationEngine.primaryCreateInterest) {
+      return global.PFDRecommendationEngine.primaryCreateInterest(idea, profile);
+    }
+    return ((idea && idea.createInterestTags) || [])[0] || '';
+  }
+
+  function isProjectShapedIdea(idea, primary) {
+    var text = ((idea && idea.text) || '').toLowerCase();
+    if (primary === 'building_business' || primary === 'content_creation') return true;
+    if (idea && idea.productivityHeavy) return true;
+    return /project|portfolio|chapter|draft|brand|business|newsletter|website|course/.test(text);
+  }
+
+  function uniqueProjectNames(profile) {
+    var names = (profile.projectNames || []).concat([profile.projectName]).map(function (n) {
+      return (n || '').trim();
+    }).filter(Boolean);
+    var unique = [];
+    names.forEach(function (n) { if (unique.indexOf(n) < 0) unique.push(n); });
+    return unique;
+  }
+
+  function projectMatch(profile, idea, seed) {
+    var unique = uniqueProjectNames(profile);
+    if (!unique.length) return null;
+    var primary = ideaCreatePrimary(idea, profile);
+    var interests = profile.createInterests || [];
+    var textHits = unique.filter(function (n) { return ideaTextMatchesProject(idea, n); });
+    if (textHits.length) {
+      return { name: rotateName(textHits, seed, textHits[0]), mode: 'text' };
+    }
+    var typed = unique.filter(function (n) {
+      return projectAffinities(n).indexOf(primary) >= 0;
+    });
+    if (typed.length) {
+      return { name: rotateName(typed, seed, typed[0]), mode: 'generic' };
+    }
+    var unlabeled = unique.filter(function (n) { return !projectAffinities(n).length; });
+    if (!unlabeled.length) return null;
+    var canCarryCustom = isProjectShapedIdea(idea, primary) || interests.length === 1;
+    if (!canCarryCustom) return null;
+    return { name: rotateName(unlabeled, seed, unlabeled[0]), mode: 'generic' };
+  }
+
+  function matchingProjectName(profile, idea, seed) {
+    var match = projectMatch(profile, idea, seed);
+    return match ? match.name : '';
+  }
+
+  function projectLabel(profile, seed, idea, opts) {
+    opts = opts && typeof opts === 'object' ? opts : { forceProjectName: !!opts };
+    var unique = uniqueProjectNames(profile);
+    if (opts.forceProjectName && unique.length) {
+      var pick = typeof opts.projectNamePick === 'number' ? opts.projectNamePick : Math.abs(seed);
+      return unique[Math.abs(pick) % unique.length];
+    }
+    var matched = matchingProjectName(profile, idea, seed);
+    if (matched) return matched;
+    return 'your project';
+  }
+
+  function hasNamedProject(profile) {
+    if ((profile.projectName || '').trim()) return true;
+    return (profile.projectNames || []).some(function (n) { return (n || '').trim(); });
+  }
+
+  function communityLabel(profile, seed) {
+    var fromList = rotateName(profile.communityNames, seed, '');
+    if (fromList) return fromList;
+    var n = (profile.communityName || '').trim();
+    return n || 'your community';
+  }
+
+  function hasCommunityName(profile) {
+    if ((profile.communityName || '').trim()) return true;
+    return (profile.communityNames || []).some(function (n) { return (n || '').trim(); });
+  }
+
+  var COMMUNITY_NAME_STOP = { my: 1, the: 1, and: 1, for: 1, a: 1, an: 1, of: 1, our: 1, group: 1, club: 1, team: 1, community: 1, local: 1, coed: 1, 'co-ed': 1 };
+  var COMMUNITY_TYPE_RULES = [
+    { re: /basketball|soccer|football|volleyball|tennis|pickleball|baseball|softball|hockey|lacrosse|badminton|rugby|cricket|\bsports?\b/, hints: ['sport', 'league', 'game', 'court', 'recreational'] },
+    { re: /\brun|\brunning\b|track club/, hints: ['run', 'charity run'] },
+    { re: /sew|crochet|knit|quilt|embroider|\bcraft/, hints: ['sew', 'craft', 'clothing', 'yarn'] },
+    { re: /book|reading|library/, hints: ['book', 'library', 'read'] },
+    { re: /garden|gardening/, hints: ['garden'] },
+    { re: /church|faith|bible|mosque|temple|synagogue/, hints: ['faith', 'service'] },
+    { re: /yoga|pilates/, hints: ['yoga', 'pilates'] },
+    { re: /music|choir|band|\bsing/, hints: ['music', 'choir', 'sing'] },
+    { re: /cook|food|kitchen/, hints: ['cook', 'meal', 'food'] }
+  ];
+
+  function uniqueCommunityNames(profile) {
+    var names = (profile.communityNames || []).concat([profile.communityName]).map(function (n) {
+      return (n || '').trim();
+    }).filter(Boolean);
+    var unique = [];
+    names.forEach(function (n) { if (unique.indexOf(n) < 0) unique.push(n); });
+    return unique;
+  }
+
+  function communityNameWords(name) {
+    return (name || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(function (w) {
+      return w.length > 2 && !COMMUNITY_NAME_STOP[w];
+    });
+  }
+
+  function communityHintTokens(name) {
+    var t = (name || '').toLowerCase();
+    var out = communityNameWords(name);
+    COMMUNITY_TYPE_RULES.forEach(function (rule) {
+      if (!rule.re.test(t)) return;
+      rule.hints.forEach(function (h) {
+        if (out.indexOf(h) < 0) out.push(h);
+      });
+    });
+    return out;
+  }
+
+  function communityHasType(name) {
+    var t = (name || '').toLowerCase();
+    return COMMUNITY_TYPE_RULES.some(function (rule) { return rule.re.test(t); });
+  }
+
+  function ideaTextMatchesCommunity(idea, name) {
+    var text = ((idea && idea.text) || '').toLowerCase();
+    if (!text) return false;
+    return communityHintTokens(name).some(function (token) {
+      return token.length > 2 && text.indexOf(token) >= 0;
+    });
+  }
+
+  function isSoloCommunityAct(idea) {
+    var tag = String((idea && idea.tag) || '').toLowerCase();
+    if (tag === 'kindness' || tag === 'neighbors' || tag === 'service') return true;
+    var t = String((idea && idea.text) || '').toLowerCase();
+    if (!t) return true;
+    return /pay for the person|random acts of kindness|anonymous|stranger|compliment three|leave a kind|leave fresh flowers|leave a book|leave a glowing review|donate |introduce yourself to a neighbor|handwritten thank|pick up trash|elderly neighbor|cook a meal and deliver|show up for a neighbor|quiet unnoticed job|nod at/.test(t);
+  }
+
+  function communityMatch(profile, idea, seed) {
+    var unique = uniqueCommunityNames(profile);
+    if (!unique.length || !idea) return null;
+    if (isSoloCommunityAct(idea)) return null;
+    return { name: rotateName(unique, seed, unique[0]), mode: 'hang' };
+  }
+
+  var communityNameRotate = 0;
+  var friendNameRotate = 0;
+  var familyNameRotate = 0;
+  function pickCommunityName(profile, pick) {
+    var unique = uniqueCommunityNames(profile);
+    if (!unique.length) return '';
+    var idx = typeof pick === 'number' ? Math.abs(pick) : (communityNameRotate++);
+    return unique[idx % unique.length];
   }
 
   function pickVariant(key, seed) {
@@ -174,83 +432,78 @@
     return list[Math.abs(seed) % list.length];
   }
 
-  function detectFamily(idea, profile, categoryId) {
+  function detectFamily(idea, profile, categoryId, opts) {
+    opts = opts || {};
     var t = (idea.text || '').toLowerCase();
     var fr = profile.coreFrictions || [];
     var targets = profile.connectTargets || [];
     var styles = profile.partnerConnectionStyles || [];
 
     if (categoryId === 'move') {
-      if (/dance/.test(t)) return 'dance';
-      if (/walk|stroll/.test(t)) {
+      var moveTags = idea.moveTypeTags || [];
+      var movePrefs = profile.movePreferences || [];
+      var matchedMove = movePrefs.filter(function (p) { return moveTags.indexOf(p) >= 0; });
+      var primaryMove = matchedMove[0] || moveTags[0];
+      if (primaryMove === 'dance') return 'dance';
+      if (primaryMove === 'walking') {
         if (fr.indexOf('repetitive_days') >= 0) return 'walk_novelty';
         if ((profile.moveDesiredFeelings || []).indexOf('calming') >= 0) return 'walk_calm';
         return 'walk';
       }
-      if (/stretch|yoga/.test(t)) return 'stretch';
-      return 'walk_calm';
+      if (primaryMove === 'yoga_stretch') return 'stretch';
+      if (primaryMove === 'running') return 'run';
+      if (primaryMove === 'hiking') return 'hike';
+      if (primaryMove === 'sports') return 'sports_move';
+      if (primaryMove === 'strength') return 'strength_move';
+      if (primaryMove === 'fitness_classes') return 'fitness_move';
+      return 'generic';
     }
     if (categoryId === 'connect') {
       var ideaTargets = idea.connectTargetTags || [];
       var primary = ideaTargets[0] || (targets.indexOf('partner') >= 0 ? 'partner' : targets[0]) || 'friends';
       if (primary === 'partner' || (targets.indexOf('partner') >= 0 && ideaTargets.indexOf('partner') >= 0)) {
-        if (styles.indexOf('food_cafes') >= 0 || /café|coffee|food|restaurant|treat/.test(t)) return 'partner_food';
-        if (styles.indexOf('adventure') >= 0 || /adventure|try something new|explore/.test(t)) return 'partner_adventure';
-        if (styles.indexOf('deep_conversation') >= 0 || /conversation|talk|check in/.test(t)) return 'partner_talk';
-        if (styles.indexOf('active') >= 0 || /walk|active|workout|move/.test(t)) return 'partner_active';
-        return 'partner_cozy';
+        return 'partner_keep';
       }
       if (primary === 'family' || ideaTargets.indexOf('family') >= 0) {
-        if (/food|meal|lunch|dinner|café/.test(t)) return 'family_food';
-        return 'family_lowkey';
+        return 'family_keep';
       }
-      if (primary === 'community' || ideaTargets.indexOf('community') >= 0) return 'community_new';
-      if (/food|café|coffee/.test(t)) return 'friend_food';
-      if (/walk|active|workout|move|sport/.test(t)) return 'friend_active';
-      if (/try something new|adventure|explore/.test(t)) return 'friend_new';
-      return 'friend_lowkey';
+      if (primary === 'community' || ideaTargets.indexOf('community') >= 0) {
+        return communityMatch(profile, idea, hashStr((idea && idea.id) || idea.text || '')) ? 'community_named' : 'community_keep';
+      }
+      if (primary === 'friends' || ideaTargets.indexOf('friends') >= 0) return 'friend_keep';
+      return 'generic';
     }
     if (categoryId === 'create') {
-      if (/photo|film|camera/.test(t)) return 'photo_novelty';
-      if ((profile.createInterests || []).indexOf('building_business') >= 0 && idea.productivityHeavy) {
+      if (opts.skipProjectName) return 'generic';
+      var match = projectMatch(profile, idea, hashStr((idea && idea.id) || idea.text || ''));
+      if (match && match.mode === 'text') return 'create_named';
+      if ((match || opts.forceProjectName) && (profile.createInterests || []).indexOf('building_business') >= 0 && idea.productivityHeavy) {
         if (fr.indexOf('work_switch_off') >= 0) return 'business_contained';
         return 'business_fun';
       }
-      return 'create_play';
+      if (match) return 'project_any';
+      if (opts.forceProjectName && hasNamedProject(profile)) return 'project_any';
+      return 'generic';
     }
     if (categoryId === 'learn') {
-      if ((profile.mindsetFormats || []).indexOf('journaling') >= 0) return 'mindset_journal';
-      if ((profile.mindsetFormats || []).indexOf('podcasts') >= 0) return 'mindset_audio';
-      if ((profile.mindsetFormats || []).indexOf('documentaries') >= 0 || (profile.mindsetFormats || []).indexOf('learning') >= 0) return 'mindset_learn';
-      if ((profile.mindsetNeeds || []).length && Math.abs(hashStr(idea.id)) % 3 === 0) return 'mindset_learn';
-      return 'mindset_journal';
+      return 'generic';
     }
     if (categoryId === 'nourish') {
-      var rs = profile.resetStyles || [];
-      if (rs.indexOf('offline_reset') >= 0 || fr.indexOf('phone_overuse') >= 0) return 'reset_offline';
-      if (rs.indexOf('self_care') >= 0) return 'reset_selfcare';
-      if (rs.indexOf('space_reset') >= 0) return 'reset_space';
-      if (rs.indexOf('rest_reset') >= 0) return 'reset_rest';
-      if (rs.indexOf('nature_reset') >= 0) return 'reset_nature';
-      if (rs.indexOf('solo_reset') >= 0) return 'reset_solo';
-      if (rs.indexOf('nourishing_reset') >= 0) return 'reset_nature';
-      if (/phone|screen|unplug/.test(t)) return 'reset_offline';
-      if (/shower|bath|skincare|cozy/.test(t)) return 'reset_selfcare';
-      if (/clean|organiz|tidy/.test(t)) return 'reset_space';
-      if (/outside|sun|nature|walk/.test(t)) return 'reset_nature';
-      return 'reset_rest';
+      return 'generic';
     }
     return 'generic';
   }
 
-  function fillTemplate(tpl, profile, idea, seed) {
+  function fillTemplate(tpl, profile, idea, seed, opts) {
     seed = seed || hashStr(idea.id + (profile.updatedAt || ''));
+    opts = opts || {};
     return tpl
       .replace(/\{duration\}/g, durationLabel(profile, idea))
       .replace(/\{partner\}/g, partnerLabel(profile, seed))
-      .replace(/\{friend\}/g, friendLabel(profile, seed))
-      .replace(/\{family\}/g, familyLabel(profile, seed))
-      .replace(/\{project\}/g, projectLabel(profile))
+      .replace(/\{friend\}/g, (opts && opts.friendName) || friendLabel(profile, seed))
+      .replace(/\{family\}/g, (opts && opts.familyName) || familyLabel(profile, seed))
+      .replace(/\{community\}/g, (opts && opts.communityName) || (communityMatch(profile, idea, seed) || {}).name || communityLabel(profile, seed))
+      .replace(/\{project\}/g, projectLabel(profile, seed, idea, opts))
       .replace(/\{text\}/g, idea.text || '');
   }
 
@@ -264,15 +517,34 @@
     return '';
   }
 
-  function compose(idea, profile, categoryId) {
+  function compose(idea, profile, categoryId, opts) {
     if (!idea) return null;
+    opts = opts || {};
     var cat = categoryId || idea.categoryId;
-    var family = detectFamily(idea, profile, cat);
+    var family = detectFamily(idea, profile, cat, opts);
+    if (family === 'community_named') {
+      if (typeof opts.communityNamePick !== 'number') {
+        opts.communityNamePick = communityNameRotate++;
+      }
+      opts.communityName = pickCommunityName(profile, opts.communityNamePick);
+    }
+    if (family === 'friend_keep') {
+      if (typeof opts.friendNamePick !== 'number') {
+        opts.friendNamePick = friendNameRotate++;
+      }
+      opts.friendName = pickRotatedName(profile.friendNames, opts.friendNamePick, 'a friend');
+    }
+    if (family === 'family_keep') {
+      if (typeof opts.familyNamePick !== 'number') {
+        opts.familyNamePick = familyNameRotate++;
+      }
+      opts.familyName = pickRotatedName(profile.familyNames, opts.familyNamePick, 'someone in your family');
+    }
     var seed = hashStr(idea.id + (profile.updatedAt || '') + family);
     var tpl = pickVariant(family, seed);
-    var title = fillTemplate(tpl, profile, idea, seed);
+    var title = fillTemplate(tpl, profile, idea, seed, opts);
     if (family === 'generic' && title.indexOf('{text}') < 0 && title === idea.text) {
-      title = fillTemplate(pickVariant('generic', seed + 1), profile, idea, seed + 1);
+      title = fillTemplate(pickVariant('generic', seed + 1), profile, idea, seed + 1, opts);
     }
     var theme = global.PFDRecommendationEngine && global.PFDRecommendationEngine.recommendationThemeKey
       ? global.PFDRecommendationEngine.recommendationThemeKey(idea, profile, cat)
