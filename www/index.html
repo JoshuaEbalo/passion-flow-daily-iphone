@@ -2231,6 +2231,8 @@ function App(){
   var _showProfilePrompt=useState(false),showProfilePrompt=_showProfilePrompt[0],setShowProfilePrompt=_showProfilePrompt[1];
   var _showPersonalizationPayoff=useState(false),showPersonalizationPayoff=_showPersonalizationPayoff[0],setShowPersonalizationPayoff=_showPersonalizationPayoff[1];
   var _payoffPreviewPlan=useState(null),payoffPreviewPlan=_payoffPreviewPlan[0],setPayoffPreviewPlan=_payoffPreviewPlan[1];
+  var _payoffPreviewShownIds=useState({create:[],learn:[],connect:[],move:[],nourish:[]}),payoffPreviewShownIds=_payoffPreviewShownIds[0],setPayoffPreviewShownIds=_payoffPreviewShownIds[1];
+  var _payoffPreviewShuffleCount=useState({create:0,learn:0,connect:0,move:0,nourish:0}),payoffPreviewShuffleCount=_payoffPreviewShuffleCount[0],setPayoffPreviewShuffleCount=_payoffPreviewShuffleCount[1];
   var _expandedCatGoals=useState({}),expandedCatGoals=_expandedCatGoals[0],setExpandedCatGoals=_expandedCatGoals[1];
   var _profileSavedMsg=useState(''),profileSavedMsg=_profileSavedMsg[0],setProfileSavedMsg=_profileSavedMsg[1];
   var _showDeepPersonalization=useState(false),showDeepPersonalization=_showDeepPersonalization[0],setShowDeepPersonalization=_showDeepPersonalization[1];
@@ -3318,25 +3320,90 @@ function App(){
       }} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-7 py-3.5 rounded-full active:scale-[0.97] leading-snug max-w-[300px]" style={{animationDelay:'1.4s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>{unlockDailyFlowCta(isPro)}</button>
     </div>;
   }
-  function maybeShowPersonalizationPayoff(nextProfile,wasSkipped,action){
-    if(wasSkipped||action)return false;
+  function buildDeepPayoffCopy(profile){
+    var copy=buildOnboardingPayoffCopy(profile,false);
+    return {
+      title:copy.title,
+      subtitle:copy.subtitle,
+      footer:'A fresh flow every morning, personalized to you.',
+      settings:'Edit anytime in Settings.'
+    };
+  }
+  function maybeShowPersonalizationPayoff(nextProfile,wasSkipped){
+    if(wasSkipped)return false;
     if(!nextProfile.deepPersonalizationCompleted)return false;
     if(personalizeMode!=='full'&&personalizeMode!=='layer2')return false;
     if(hasSeenPersonalizationPayoff(currentUser&&currentUser.uid))return false;
     var preview=buildPersonalizationPayoffPreview(nextProfile);
     if(!preview)return false;
+    var shown=emptyPlanSessionTracking();
+    Object.keys(preview).forEach(function(cat){
+      if(preview[cat]&&preview[cat].ideaId)shown[cat]=[preview[cat].ideaId];
+    });
     setPayoffPreviewPlan(preview);
+    setPayoffPreviewShownIds(shown);
+    setPayoffPreviewShuffleCount(emptyOnboardingShuffleCounts());
     setShowPersonalizationPayoff(true);
     markPersonalizationPayoffSeen(currentUser&&currentUser.uid);
     trackEvent('personalization_payoff_shown');
     return true;
   }
-  function dismissPersonalizationPayoff(openPlan){
+  function shufflePayoffPreviewCategory(categoryId){
+    if(!payoffPreviewPlan||!window.PFDRecommendationComposer)return;
+    var used=payoffPreviewShuffleCount[categoryId]||0;
+    if(used>=OB_PAYOFF_SHUFFLES)return;
+    ensureIdeaIndex();
+    var item=payoffPreviewPlan[categoryId];
+    var currentIdea=item?{id:item.ideaId,text:item.sourceText||item.title}:null;
+    var excludeIds=(payoffPreviewShownIds[categoryId]||[]).slice();
+    if(currentIdea&&currentIdea.id&&excludeIds.indexOf(currentIdea.id)<0)excludeIds.push(currentIdea.id);
+    Object.keys(payoffPreviewPlan).forEach(function(cat){
+      if(cat!==categoryId&&payoffPreviewPlan[cat]&&payoffPreviewPlan[cat].ideaId){
+        var oid=payoffPreviewPlan[cat].ideaId;
+        if(excludeIds.indexOf(oid)<0)excludeIds.push(oid);
+      }
+    });
+    var idea=pickAnotherIdea(categoryId,excludeIds,[],currentIdea);
+    if(!idea)return;
+    var composed=composeRecommendation(idea,personalizationProfile,categoryId,categoryId==='create'?(!createComposedIsNamed(item)):undefined);
+    if(!composed||!composed.title)return;
+    var nextPlan=Object.assign({},payoffPreviewPlan);
+    nextPlan[categoryId]=composed;
+    setPayoffPreviewPlan(nextPlan);
+    setPayoffPreviewShownIds(function(prev){
+      var n=Object.assign(emptyPlanSessionTracking(),prev||{});
+      var list=(n[categoryId]||[]).slice();
+      if(list.indexOf(idea.id)<0)list.push(idea.id);
+      n[categoryId]=list;
+      return n;
+    });
+    setPayoffPreviewShuffleCount(function(prev){
+      var n=Object.assign({},emptyOnboardingShuffleCounts(),prev);
+      n[categoryId]=(n[categoryId]||0)+1;
+      return n;
+    });
+    trackEvent('personalization_payoff_shuffle',{category:categoryId,count:used+1});
+  }
+  function dismissPersonalizationPayoff(){
     setShowPersonalizationPayoff(false);
     setPayoffPreviewPlan(null);
+    var action=pendingRecAction;
+    var cat=pickCategoryId;
+    var backTo=personalizeReturnToRef.current;
+    personalizeReturnToRef.current='flow';
+    setPendingRecAction(null);
+    setPickCategoryId(null);
+    if(backTo==='settings'&&!action){
+      switchMobileTab('settings',false);
+      switchDesktopTab('settings',false);
+      setProfileSavedMsg('Preferences saved ✨');
+      setTimeout(function(){setProfileSavedMsg('');},2500);
+      return;
+    }
     switchMobileTab('flow',false);
     switchDesktopTab('flow',false);
-    if(openPlan)executePlanMyDay(personalizationProfile,true);
+    if(action==='pick')executePickForMe(cat,personalizationProfile);
+    else if(action==='plan')executePlanMyDay(personalizationProfile,true);
   }
   function isExistingUserForPersonalization(){
     return !!(existingAccountRef.current||(logsData&&logsData.length>0)||(obAnswers&&obAnswers.q1));
@@ -3644,15 +3711,15 @@ function App(){
   }
   function openFineTunePersonalization(action,categoryId){
     if(profileNeedsLayer1()){
-      openPersonalizeFlow('full',action||null,categoryId||null,1);
+      openPersonalizeFlow('full',action||null,categoryId||null,0);
     }else{
-      openPersonalizeFlow('layer2',action||null,categoryId||null,1);
+      openPersonalizeFlow('layer2',action||null,categoryId||null,0);
     }
   }
   function promptPersonalizationForRec(action,categoryId){
     setOpenCard(null);
     if(!profileNeedsLayer1()){
-      openPersonalizeFlow('layer2',action,categoryId,1);
+      openPersonalizeFlow('layer2',action,categoryId,0);
       return;
     }
     if(existingAccountRef.current||isExistingUserForPersonalization()){
@@ -3661,7 +3728,7 @@ function App(){
       setShowProfilePrompt(true);
       trackEvent('profile_prompt_shown',{triggered_by:action,repeated:true});
     }else{
-      openPersonalizeFlow('full',action,categoryId,1);
+      openPersonalizeFlow('full',action,categoryId,0);
     }
   }
   function dismissProfilePrompt(){
@@ -3935,14 +4002,15 @@ function App(){
     markPersonalized();
     savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
     setShowDeepPersonalization(false);
+    if((personalizeMode==='full'||personalizeMode==='layer2')&&maybeShowPersonalizationPayoff(next,wasSkipped)){
+      return;
+    }
     var action=pendingRecAction;
     var cat=pickCategoryId;
     setPendingRecAction(null);
     if(action==='pick')executePickForMe(cat,next);
     else if(action==='plan')executePlanMyDay(next,true);
-    else if(maybeShowPersonalizationPayoff(next,wasSkipped,null)){
-      refreshRecommendationsAfterProfileSave(next);
-    }else if(personalizeMode==='full'){
+    else if(personalizeMode==='full'||personalizeMode==='layer2'){
       refreshRecommendationsAfterProfileSave(next);
       var backTo=personalizeReturnToRef.current;
       personalizeReturnToRef.current='flow';
@@ -8399,33 +8467,40 @@ function App(){
     })()}
 
     {/* Personalization payoff — first completion preview */}
-    {showPersonalizationPayoff&&payoffPreviewPlan&&<div className="fixed inset-0 z-[86] flex items-end sm:items-center justify-center px-5 pb-8 sm:pb-0" style={{background:'rgba(46,28,22,0.4)',backdropFilter:'blur(4px)'}}>
-      <div className="w-full max-w-[380px] rounded-[24px] p-6 sheet-up max-h-[85vh] flex flex-col overflow-hidden" style={{background:'#FAF6F2',boxShadow:'0 12px 40px rgba(0,0,0,0.18)'}} onClick={function(e){e.stopPropagation();}}>
-        <div className="flex-1 overflow-y-auto min-h-0 text-center">
-          <p className="text-[28px] mb-2">✨</p>
-          <h3 className="font-serif text-[22px] text-headline italic mb-2 leading-snug">You're all set</h3>
-          <p className="font-sans text-[13px] text-body opacity-70 mb-4 leading-relaxed">Here's how today's ideas might look, shaped by what you shared. You always choose what to keep.</p>
-          <div className="space-y-2 text-left mb-2">
+    {showPersonalizationPayoff&&payoffPreviewPlan&&(function(){
+      var copy=buildDeepPayoffCopy(personalizationProfile);
+      return <div className="fixed inset-0 z-[205] flex items-end sm:items-center justify-center px-4 pb-5 sm:pb-0" style={{background:'rgba(46,28,22,0.42)',backdropFilter:'blur(6px)'}}>
+        <div className="w-full max-w-[400px] rounded-[28px] px-5 pt-5 pb-5 sheet-up flex flex-col overflow-hidden" style={{background:'#FAF6F2',boxShadow:'0 16px 48px rgba(0,0,0,0.2)',maxHeight:'min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 12px))'}} onClick={function(e){e.stopPropagation();}}>
+          <div className="flex-shrink-0 text-center px-1">
+            <p className="text-[20px] mb-0.5">{'\u2728'}</p>
+            <p className="font-serif text-[20px] text-headline italic mb-1 leading-snug">{copy.title}</p>
+            <p className="font-sans text-[12px] text-headline mb-3 leading-snug">{copy.subtitle}</p>
+          </div>
+          <div className="flex-1 min-h-0 flex flex-col gap-2 text-left overflow-y-auto">
             {CARDS.map(function(c){
               var item=payoffPreviewPlan[c.id];
               if(!item)return null;
-              return <div key={c.id} className="flex items-center gap-2.5 rounded-[14px] px-3 py-2.5 border" style={{background:'linear-gradient(160deg, '+c.color+' 0%, rgba(255,255,255,0.96) 78%)',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
-                <div className="w-[32px] h-[32px] rounded-[10px] flex items-center justify-center flex-shrink-0 text-[16px]" style={{background:cardPickGradient(c.id),boxShadow:'0 2px 6px rgba(0,0,0,0.10)'}}>{c.emoji}</div>
-                <div className="min-w-0 flex-1">
+              var shufflesLeft=OB_PAYOFF_SHUFFLES-(payoffPreviewShuffleCount[c.id]||0);
+              return <div key={c.id} className="flex items-center gap-2.5 rounded-[16px] pl-3 pr-2 py-2.5 border overflow-hidden" style={{background:'linear-gradient(160deg, '+c.color+' 0%, rgba(255,255,255,0.96) 78%)',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
+                <div className="w-[36px] h-[36px] rounded-[12px] flex items-center justify-center flex-shrink-0 text-[18px]" style={{background:cardPickGradient(c.id),boxShadow:'0 2px 8px rgba(0,0,0,0.12)'}}>{c.emoji}</div>
+                <div className="flex-1 min-w-0">
                   <p className="font-sans text-[10px] font-semibold text-body opacity-50 mb-0.5">{c.title}</p>
-                  <p className="font-sans text-[12px] text-headline leading-snug">{item.title}</p>
+                  <p key={item.ideaId||item.title} className="font-sans text-[13px] text-headline leading-snug">{item.title}</p>
                 </div>
+                {shufflesLeft>0&&<button type="button" onClick={function(){shufflePayoffPreviewCategory(c.id);}} className="flex-shrink-0 w-[34px] h-[34px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform" style={{background:'rgba(255,255,255,0.78)',border:'1px solid '+c.borderColor,color:'#614433'}} aria-label={'Shuffle '+c.title}>
+                  <ShuffleIcon/>
+                </button>}
               </div>;
             })}
           </div>
-          <p className="font-sans text-[11px] text-body opacity-45 mb-1">Edit anytime in Settings.</p>
+          <div className="flex-shrink-0 text-center pt-3">
+            <p className="font-sans text-[12px] text-headline font-medium leading-snug mb-0.5">{copy.footer}</p>
+            <p className="font-sans text-[11px] text-body opacity-50 leading-snug mb-3">{copy.settings}</p>
+            <button onClick={dismissPersonalizationPayoff} className="font-sans text-[14px] font-semibold text-white px-8 py-3.5 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
+          </div>
         </div>
-        <div className="flex-shrink-0 pt-3 mt-2 space-y-2" style={{borderTop:'1px solid rgba(196,154,122,0.12)'}}>
-          <button onClick={function(){dismissPersonalizationPayoff(false);}} className="w-full font-sans text-[14px] font-semibold text-white py-3.5 rounded-full active:scale-[0.98]" style={{background:'#C49A7A'}}>Explore the wheel</button>
-          <button onClick={function(){dismissPersonalizationPayoff(true);}} className="font-sans text-[12px] text-body opacity-50 py-2">See my daily flow suggestions</button>
-        </div>
-      </div>
-    </div>}
+      </div>;
+    })()}
 
     {/* Shared card panel overlay (works on both mobile + desktop) */}
     {openCard&&(function(){
