@@ -9,8 +9,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, WKScriptMessageHandler {
 
     var window: UIWindow?
     private var webViewHandlersAdded = false
+    private let launchWash = UIColor(red: 252.0 / 255.0, green: 228.0 / 255.0, blue: 236.0 / 255.0, alpha: 1)
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        window?.backgroundColor = launchWash
         return true
     }
 
@@ -30,6 +32,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, WKScriptMessageHandler {
         guard !webViewHandlersAdded else { return }
         DispatchQueue.main.async {
             guard let webView = self.bridgeWebView() else { return }
+            webView.isOpaque = false
+            webView.backgroundColor = self.launchWash
+            webView.scrollView.backgroundColor = self.launchWash
             webView.configuration.userContentController.add(self, name: "googleAuth")
             webView.configuration.userContentController.add(self, name: "saveImageToPhotos")
             #if DEBUG

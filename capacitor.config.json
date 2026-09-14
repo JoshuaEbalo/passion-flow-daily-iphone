@@ -2,6 +2,7 @@
   "appId": "com.passionflowdaily.app",
   "appName": "Passion Flow Daily",
   "webDir": "www",
+  "backgroundColor": "#FAF6F2",
   "plugins": {
     "LocalNotifications": {
       "presentationOptions": ["badge", "sound", "banner", "list"]

@@ -3,52 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#FCE4EC" />
   <title>Passion Flow Daily</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="purchases-capacitor.js"></script>
-  <script src="analytics.js"></script>
-  <script src="notifications.js"></script>
-  <script src="personalization-constants.js"></script>
-  <script src="idea-metadata.js"></script>
-  <script src="recommendation-engine.js"></script>
-  <script src="recommendation-composer.js"></script>
-  <script src="plan-day-coherence.js"></script>
-  <script src="persona-fixtures.js"></script>
-  <script>window.RCPurchases=RCPurchases;</script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC038zM-3E0pawUnhPi-V7pprz_Q0DRK10",
-      authDomain: "passion-flow-daily.firebaseapp.com",
-      projectId: "passion-flow-daily",
-      storageBucket: "passion-flow-daily.firebasestorage.app",
-      messagingSenderId: "307906430534",
-      appId: "1:307906430534:web:12b2bc91d05a7c47c76c47"
-    };
-    firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore();
-    try {
-      if (firebase.analytics) window.firebaseAnalytics = firebase.analytics();
-    } catch (e) {}
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { serif: ['Playfair Display','Georgia','serif'], sans: ['Inter','system-ui','sans-serif'] },
-          colors: { accent: '#C49A7A', body: '#614433', headline: '#2E1C16', cream: '#FAF6F2' }
-        }
-      }
-    };
-  </script>
+  <style>
+    @font-face { font-family:'Playfair Display'; font-style:normal; font-weight:400; font-display:block; src:url('fonts/PlayfairDisplay-Regular.ttf') format('truetype'); }
+    @font-face { font-family:'Playfair Display'; font-style:italic; font-weight:400; font-display:block; src:url('fonts/PlayfairDisplay-Italic.ttf') format('truetype'); }
+    @font-face { font-family:'Playfair Display'; font-style:normal; font-weight:700; font-display:block; src:url('fonts/PlayfairDisplay-Bold.ttf') format('truetype'); }
+  </style>
+  <link rel="preload" href="splash-tagline.png" as="image">
+  <link rel="preload" href="fonts/PlayfairDisplay-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/PlayfairDisplay-Italic.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/PlayfairDisplay-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'">
+  <style>
+    html,body{background:linear-gradient(160deg,#FCE4EC 0%,#FAF6F2 40%,#EDE6F6 70%,#E0F2E9 100%);margin:0;height:100%;}
+    #html-splash{position:fixed;inset:0;background:linear-gradient(160deg,#FCE4EC 0%,#FAF6F2 40%,#EDE6F6 70%,#E0F2E9 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+    .pfd-html-splash-wheel{width:min(70vw,400px);height:min(70vw,400px);position:relative;isolation:isolate;}
+    .pfd-html-splash-ring{position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block;transform-origin:50% 50%;transform-box:fill-box;animation:splashSpin 3.15s linear forwards;}
+    .pfd-html-splash-center{position:absolute;left:25%;top:25%;width:50%;height:50%;z-index:2;display:block;pointer-events:none;overflow:visible;}
+    #html-splash img{max-width:none;}
+    .pfd-html-splash-tag{width:267px;max-width:82vw;height:auto;margin:24px 0 0;display:block;}
+    @keyframes splashSpin {
+      0%   { transform: rotate(0deg); }
+      18%  { transform: rotate(540deg); }
+      40%  { transform: rotate(840deg); }
+      62%  { transform: rotate(990deg); }
+      82%  { transform: rotate(1060deg); }
+      100% { transform: rotate(1080deg); }
+    }
+    @keyframes splashOut { from{opacity:1} to{opacity:0} }
+    #html-splash .pfd-html-splash-ring { animation: splashSpin 3.15s linear forwards; transform-origin: 50% 50%; transform-box: fill-box; }
+    #html-splash.splash-out .pfd-html-splash-wheel,
+    #html-splash.splash-out .pfd-html-splash-tag { animation: splashOut 0.16s ease forwards; }
+  </style>
   <style>
     * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     html, body {
@@ -165,21 +152,18 @@
     .feeling-chip { transition:all .25s ease; }
     .feeling-chip:active { transform:scale(.95); }
     .sc { background:white; border-radius:20px; border:1px solid #C49A7A; padding:20px; box-shadow:0 0 18px rgba(196,154,122,0.12),0 2px 8px rgba(0,0,0,0.03); }
-    @keyframes splashLogoIn { from{opacity:0;transform:translateY(20px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
-    @keyframes splashTagIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
     @keyframes splashGlow { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.05)} }
     @keyframes splashOut { from{opacity:1} to{opacity:0} }
-    .splash-logo { animation: splashLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-    .splash-tag { animation: splashTagIn 0.6s ease forwards; animation-delay:0.6s; opacity:0; }
+    .splash-logo { }
+    .splash-tag { opacity:0.6; }
     .splash-glow { animation: splashGlow 2.5s ease-in-out infinite; }
-    .splash-out { animation: splashOut 0.6s ease forwards; }
+    .splash-out { animation: splashOut 0.16s ease forwards; }
     @keyframes splashSpin {
       0%   { transform: rotate(0deg); }
       18%  { transform: rotate(540deg); }
       40%  { transform: rotate(840deg); }
       62%  { transform: rotate(990deg); }
-      80%  { transform: rotate(1055deg); }
-      92%  { transform: rotate(1075deg); }
+      82%  { transform: rotate(1060deg); }
       100% { transform: rotate(1080deg); }
     }
     @keyframes heroIdeaSlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -196,6 +180,37 @@
     .ob-blur-in { animation: obBlurIn 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
     .ob-word-in { animation: obWordIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
     .ob-cinematic { animation: obCinematicIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards; opacity:0; }
+    @keyframes obWashDrift {
+      0%,100% { background-position: 0% 0%, 100% 100%, 80% 20%; opacity:0.5; }
+      50% { background-position: 80% 40%, 8% 18%, 28% 88%; opacity:0.9; }
+    }
+    .ob-wash-drift {
+      position:absolute; top:0; right:0; bottom:0; left:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(ellipse at 18% 12%, rgba(252,228,236,0.7) 0%, transparent 54%),
+        radial-gradient(ellipse at 82% 88%, rgba(224,242,233,0.62) 0%, transparent 52%),
+        radial-gradient(ellipse at 72% 28%, rgba(237,230,246,0.5) 0%, transparent 48%);
+      background-size: 160% 160%;
+      animation: obWashDrift 42s ease-in-out infinite;
+    }
+    @keyframes obTapBreathe {
+      0%,100% { opacity:0.78; }
+      50% { opacity:1; }
+    }
+    .ob-tap-breathe { animation: obTapBreathe 2.6s ease-in-out infinite; }
+    .ob-payoff-stack { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; width:100%; }
+    .ob-payoff-cards { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:8px; }
+    .ob-payoff-card { flex:1 1 0; min-height:0; }
+    .pfd-payoff-sheet { height:calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px); max-height:820px; }
+    @media (min-width: 700px) {
+      .ob-payoff-stack { justify-content:center; }
+      .ob-payoff-cards { flex:none; }
+      .ob-payoff-card { flex:none; padding-top:14px; padding-bottom:14px; }
+      .pfd-payoff-sheet { height:auto; max-height:min(820px, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ob-wash-drift, .ob-tap-breathe { animation: none; }
+    }
     @keyframes overlayIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
     @keyframes overlayOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.95)} }
     .overlay-in { animation: overlayIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
@@ -206,20 +221,69 @@
   </style>
 </head>
 <body>
-<div id="root">
-  <div id="html-splash" style="position:fixed;inset:0;background:linear-gradient(160deg,#F8EAEA 0%,#F3DCDC 35%,#FAF6F2 70%,#F5DDDE 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
-    <svg width="160" height="160" viewBox="0 0 160 160">
-      <path d="M80 80 L80 16 A64 64 0 0 1 135.4 48 Z" fill="#FCE4EC" fill-opacity="0.9" stroke="white" stroke-width="2"/>
-      <path d="M80 80 L135.4 48 A64 64 0 0 1 135.4 112 Z" fill="#FDEBD0" fill-opacity="0.9" stroke="white" stroke-width="2"/>
-      <path d="M80 80 L135.4 112 A64 64 0 0 1 80 144 Z" fill="#EDE6F6" fill-opacity="0.9" stroke="white" stroke-width="2"/>
-      <path d="M80 80 L80 144 A64 64 0 0 1 24.6 112 Z" fill="#E8F5E9" fill-opacity="0.9" stroke="white" stroke-width="2"/>
-      <path d="M80 80 L24.6 112 A64 64 0 0 1 80 16 Z" fill="#FBE9E7" fill-opacity="0.9" stroke="white" stroke-width="2"/>
-      <circle cx="80" cy="80" r="32" fill="white"/>
+<div id="html-splash">
+  <div class="pfd-html-splash-wheel">
+    <svg class="pfd-html-splash-ring" viewBox="0 0 400 400" width="400" height="400" aria-hidden="true">
+      <path d="M 200.00 12.00 A 188.00 188.00 0 0 1 378.80 141.90 L 295.11 169.10 A 100.00 100.00 0 0 0 200.00 100.00 Z" fill="#FCE4EC" fill-opacity="0.8" stroke="white" stroke-width="2.5"/>
+      <path d="M 378.80 141.90 A 188.00 188.00 0 0 1 310.50 352.10 L 258.78 280.90 A 100.00 100.00 0 0 0 295.11 169.10 Z" fill="#FDEBD0" fill-opacity="0.8" stroke="white" stroke-width="2.5"/>
+      <path d="M 310.50 352.10 A 188.00 188.00 0 0 1 89.50 352.10 L 141.22 280.90 A 100.00 100.00 0 0 0 258.78 280.90 Z" fill="#EDE6F6" fill-opacity="0.8" stroke="white" stroke-width="2.5"/>
+      <path d="M 89.50 352.10 A 188.00 188.00 0 0 1 21.20 141.90 L 104.89 169.10 A 100.00 100.00 0 0 0 141.22 280.90 Z" fill="#E0F2E9" fill-opacity="0.8" stroke="white" stroke-width="2.5"/>
+      <path d="M 21.20 141.90 A 188.00 188.00 0 0 1 200.00 12.00 L 200.00 100.00 A 100.00 100.00 0 0 0 104.89 169.10 Z" fill="#FFF8E1" fill-opacity="0.8" stroke="white" stroke-width="2.5"/>
     </svg>
-    <p style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:#2E1C16;font-style:italic;margin-top:16px;opacity:0.75;letter-spacing:0.02em">Passion Flow Daily</p>
-    <p style="font-family:'Inter',sans-serif;font-size:11px;color:#614433;opacity:0.35;margin-top:6px;letter-spacing:0.08em">loading...</p>
+    <svg class="pfd-html-splash-center" viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+      <circle cx="100" cy="100" r="99" fill="#fff" stroke="rgba(196,154,122,0.12)" stroke-width="1"/>
+      <path fill="#2E1C16" d="M58.42 61.06Q58.76 61.08 59.3 61.09Q59.85 61.11 60.38 61.11Q61.13 61.11 61.82 61.09Q62.5 61.08 62.79 61.08Q64.73 61.08 65.69 61.96Q66.65 62.84 66.65 64.23Q66.65 64.81 66.46 65.44Q66.26 66.07 65.79 66.61Q65.32 67.14 64.5 67.48Q63.69 67.81 62.44 67.81H60.9V67.49H62.28Q63.42 67.49 64.02 67.06Q64.62 66.63 64.83 65.93Q65.05 65.22 65.05 64.41Q65.05 62.89 64.45 62.13Q63.85 61.38 62.39 61.38Q61.66 61.38 61.43 61.65Q61.21 61.93 61.21 62.76V70.69Q61.21 71.27 61.33 71.56Q61.45 71.85 61.8 71.94Q62.15 72.04 62.82 72.07V72.39Q62.41 72.36 61.77 72.35Q61.13 72.34 60.47 72.34Q59.85 72.34 59.3 72.35Q58.76 72.36 58.42 72.39V72.07Q58.97 72.04 59.25 71.94Q59.53 71.85 59.62 71.56Q59.72 71.27 59.72 70.69V62.76Q59.72 62.17 59.62 61.89Q59.53 61.61 59.25 61.5Q58.97 61.4 58.42 61.38Z M75.48 60.98 79.38 71.05Q79.62 71.65 79.93 71.85Q80.23 72.05 80.49 72.07V72.39Q80.17 72.36 79.7 72.35Q79.24 72.34 78.78 72.34Q78.15 72.34 77.61 72.35Q77.06 72.36 76.73 72.39V72.07Q77.54 72.04 77.77 71.79Q77.99 71.54 77.67 70.73L74.7 62.77L74.95 62.57L72.17 69.8Q71.91 70.44 71.86 70.88Q71.82 71.32 71.95 71.57Q72.09 71.83 72.42 71.94Q72.74 72.05 73.24 72.07V72.39Q72.79 72.36 72.3 72.35Q71.82 72.34 71.4 72.34Q71 72.34 70.72 72.35Q70.44 72.36 70.2 72.39V72.07Q70.52 71.99 70.86 71.69Q71.19 71.4 71.46 70.68L75.22 60.98Q75.29 60.98 75.35 60.98Q75.42 60.98 75.48 60.98ZM77.43 67.78V68.1H72.66L72.82 67.78Z M87.69 60.89Q88.49 60.89 88.9 61.07Q89.32 61.25 89.64 61.48Q89.83 61.59 89.95 61.65Q90.07 61.7 90.18 61.7Q90.34 61.7 90.42 61.53Q90.49 61.35 90.54 61H90.9Q90.89 61.27 90.86 61.65Q90.84 62.02 90.83 62.64Q90.82 63.25 90.82 64.26H90.46Q90.41 63.49 90.12 62.79Q89.83 62.09 89.28 61.64Q88.73 61.19 87.83 61.19Q86.98 61.19 86.43 61.7Q85.88 62.21 85.88 63.05Q85.88 63.77 86.25 64.25Q86.62 64.74 87.23 65.13Q87.85 65.53 88.57 65.97Q89.4 66.49 90.05 66.99Q90.7 67.49 91.07 68.1Q91.45 68.71 91.45 69.57Q91.45 70.6 90.98 71.27Q90.52 71.94 89.75 72.28Q88.98 72.61 88.06 72.61Q87.21 72.61 86.71 72.42Q86.22 72.23 85.86 72.02Q85.51 71.8 85.32 71.8Q85.16 71.8 85.09 71.97Q85.02 72.15 84.97 72.5H84.6Q84.63 72.17 84.64 71.71Q84.65 71.25 84.66 70.52Q84.66 69.78 84.66 68.66H85.03Q85.1 69.62 85.39 70.45Q85.69 71.29 86.3 71.79Q86.92 72.29 87.94 72.29Q88.47 72.29 88.94 72.08Q89.42 71.86 89.72 71.39Q90.02 70.92 90.02 70.17Q90.02 69.51 89.71 69.02Q89.4 68.53 88.84 68.11Q88.28 67.69 87.53 67.24Q86.78 66.77 86.12 66.29Q85.46 65.81 85.07 65.18Q84.68 64.55 84.68 63.65Q84.68 62.71 85.1 62.09Q85.53 61.48 86.22 61.18Q86.9 60.89 87.69 60.89Z M99.53 60.89Q100.33 60.89 100.74 61.07Q101.16 61.25 101.48 61.48Q101.67 61.59 101.79 61.65Q101.91 61.7 102.02 61.7Q102.18 61.7 102.26 61.53Q102.33 61.35 102.38 61H102.74Q102.73 61.27 102.7 61.65Q102.68 62.02 102.67 62.64Q102.66 63.25 102.66 64.26H102.3Q102.25 63.49 101.96 62.79Q101.67 62.09 101.12 61.64Q100.57 61.19 99.67 61.19Q98.82 61.19 98.27 61.7Q97.72 62.21 97.72 63.05Q97.72 63.77 98.09 64.25Q98.46 64.74 99.07 65.13Q99.69 65.53 100.41 65.97Q101.24 66.49 101.89 66.99Q102.54 67.49 102.91 68.1Q103.29 68.71 103.29 69.57Q103.29 70.6 102.82 71.27Q102.36 71.94 101.59 72.28Q100.82 72.61 99.9 72.61Q99.05 72.61 98.55 72.42Q98.06 72.23 97.7 72.02Q97.35 71.8 97.16 71.8Q97 71.8 96.93 71.97Q96.86 72.15 96.81 72.5H96.44Q96.47 72.17 96.48 71.71Q96.49 71.25 96.5 70.52Q96.5 69.78 96.5 68.66H96.87Q96.94 69.62 97.23 70.45Q97.53 71.29 98.14 71.79Q98.76 72.29 99.78 72.29Q100.31 72.29 100.78 72.08Q101.26 71.86 101.56 71.39Q101.86 70.92 101.86 70.17Q101.86 69.51 101.55 69.02Q101.24 68.53 100.68 68.11Q100.12 67.69 99.37 67.24Q98.62 66.77 97.96 66.29Q97.3 65.81 96.91 65.18Q96.52 64.55 96.52 63.65Q96.52 62.71 96.94 62.09Q97.37 61.48 98.06 61.18Q98.74 60.89 99.53 60.89Z M112.02 61.06V61.38Q111.48 61.4 111.2 61.5Q110.92 61.61 110.82 61.89Q110.73 62.17 110.73 62.76V70.69Q110.73 71.27 110.82 71.56Q110.92 71.85 111.2 71.94Q111.48 72.04 112.02 72.07V72.39Q111.66 72.36 111.1 72.35Q110.55 72.34 109.99 72.34Q109.37 72.34 108.82 72.35Q108.28 72.36 107.94 72.39V72.07Q108.49 72.04 108.77 71.94Q109.05 71.85 109.14 71.56Q109.24 71.27 109.24 70.69V62.76Q109.24 62.17 109.14 61.89Q109.05 61.61 108.77 61.5Q108.49 61.4 107.94 61.38V61.06Q108.28 61.08 108.82 61.09Q109.37 61.11 109.99 61.11Q110.55 61.11 111.1 61.09Q111.66 61.08 112.02 61.06Z M121.83 60.84Q123.35 60.84 124.5 61.53Q125.64 62.21 126.27 63.5Q126.9 64.79 126.9 66.63Q126.9 68.42 126.26 69.77Q125.61 71.11 124.46 71.86Q123.3 72.61 121.82 72.61Q120.3 72.61 119.15 71.93Q118.01 71.24 117.38 69.94Q116.74 68.65 116.74 66.82Q116.74 65.03 117.4 63.69Q118.06 62.34 119.2 61.59Q120.34 60.84 121.83 60.84ZM121.77 61.13Q120.73 61.13 119.96 61.85Q119.19 62.57 118.77 63.83Q118.34 65.09 118.34 66.76Q118.34 68.45 118.82 69.71Q119.29 70.97 120.1 71.65Q120.9 72.33 121.88 72.33Q122.92 72.33 123.69 71.61Q124.46 70.89 124.88 69.61Q125.3 68.34 125.3 66.69Q125.3 64.98 124.83 63.73Q124.36 62.49 123.56 61.81Q122.76 61.13 121.77 61.13Z M141.67 61.06V61.38Q141.13 61.4 140.85 61.54Q140.57 61.69 140.47 62.01Q140.38 62.33 140.38 62.92V72.47Q140.28 72.47 140.19 72.47Q140.1 72.47 140.01 72.47L133.29 62.09V70.53Q133.29 71.11 133.39 71.44Q133.5 71.77 133.81 71.9Q134.12 72.04 134.74 72.07V72.39Q134.46 72.36 133.99 72.35Q133.53 72.34 133.11 72.34Q132.71 72.34 132.3 72.35Q131.9 72.36 131.62 72.39V72.07Q132.17 72.04 132.45 71.9Q132.73 71.77 132.82 71.44Q132.92 71.11 132.92 70.53V62.76Q132.92 62.17 132.82 61.89Q132.73 61.61 132.45 61.5Q132.17 61.4 131.62 61.38V61.06Q131.9 61.08 132.3 61.09Q132.71 61.11 133.11 61.11Q133.46 61.11 133.78 61.09Q134.1 61.08 134.36 61.06L140.01 69.77V62.92Q140.01 62.33 139.9 62.01Q139.8 61.69 139.49 61.54Q139.18 61.4 138.55 61.38V61.06Q138.84 61.08 139.31 61.09Q139.78 61.11 140.18 61.11Q140.6 61.11 141.01 61.09Q141.42 61.08 141.67 61.06Z"/>
+      <path fill="#2E1C16" d="M72.46 96.22 72.63 95.54H79.43L79.26 96.22ZM84.73 90.71Q85.14 88.33 85.11 86.96Q85.07 85.58 84.21 84.97Q83.34 84.35 81.2 84.35H79.4Q78.24 84.35 77.61 84.54Q76.98 84.73 76.61 85.32Q76.23 85.92 75.89 87.18L71.37 104.04Q71.03 105.27 71.13 105.88Q71.24 106.49 71.93 106.69Q72.63 106.9 74.02 106.96L73.85 107.64Q72.97 107.58 71.61 107.56Q70.25 107.54 68.86 107.54Q67.53 107.54 66.39 107.56Q65.25 107.58 64.54 107.64L64.71 106.96Q65.86 106.9 66.51 106.69Q67.16 106.49 67.51 105.88Q67.87 105.27 68.21 104.04L72.73 87.18Q73.07 85.92 73.02 85.32Q72.97 84.73 72.44 84.51Q71.92 84.29 70.76 84.25L70.93 83.57Q72.19 83.61 73.58 83.62Q74.98 83.64 76.34 83.66Q77.7 83.67 78.87 83.67Q80.04 83.67 80.79 83.67Q82.29 83.67 84.17 83.66Q86.06 83.64 87.56 83.57Q87.11 84.86 86.72 86.07Q86.33 87.28 86.16 87.92Q85.92 88.74 85.77 89.45Q85.62 90.17 85.52 90.71ZM76.13 95.54Q77.25 95.54 77.97 95.08Q78.68 94.62 79.16 93.91Q79.63 93.19 79.94 92.43Q80.25 91.66 80.48 91.05H81.27Q80.62 92.99 80.36 94.01Q80.11 95.03 79.87 95.88Q79.67 96.73 79.43 97.75Q79.19 98.77 78.78 100.71H78Q78.1 99.89 78.21 99.09Q78.31 98.29 78.21 97.65Q78.1 97 77.59 96.61Q77.08 96.22 75.96 96.22Z M88.44 104.75Q88.17 105.74 88.27 106.3Q88.37 106.86 89.02 106.86Q89.7 106.86 90.29 106.1Q90.89 105.33 91.57 103.39L92.01 102.14H92.66L91.81 104.62Q91.36 105.91 90.73 106.68Q90.11 107.44 89.36 107.78Q88.61 108.12 87.73 108.12Q86.6 108.12 86.08 107.7Q85.55 107.27 85.43 106.56Q85.31 105.84 85.47 105.01Q85.62 104.18 85.86 103.36L91.4 84.97Q91.74 83.81 91.33 83.27Q90.92 82.72 89.26 82.72L89.49 82.01Q91.36 81.97 92.79 81.62Q94.22 81.26 95.55 80.61Z M104.73 90.37Q103.64 90.37 102.64 91.24Q101.63 92.11 100.8 93.59Q99.97 95.06 99.34 96.9Q98.71 98.74 98.37 100.71Q98.03 102.68 98.03 104.48Q98.03 106.01 98.52 106.73Q99.01 107.44 99.97 107.44Q101.05 107.44 102.06 106.57Q103.06 105.71 103.91 104.23Q104.76 102.75 105.37 100.91Q105.98 99.08 106.32 97.12Q106.66 95.17 106.66 93.33Q106.66 91.77 106.19 91.07Q105.71 90.37 104.73 90.37ZM95.1 102.78Q95.1 101.29 95.51 99.52Q95.92 97.75 96.74 96.02Q97.55 94.28 98.72 92.85Q99.9 91.43 101.46 90.56Q103.03 89.69 104.93 89.69Q107.04 89.69 108.31 91Q109.59 92.31 109.59 95.03Q109.59 96.53 109.18 98.29Q108.77 100.06 107.96 101.8Q107.14 103.53 105.97 104.96Q104.79 106.39 103.23 107.25Q101.67 108.12 99.76 108.12Q97.65 108.12 96.38 106.79Q95.1 105.47 95.1 102.78Z M121.08 105.3Q119.96 106.52 118.58 107.32Q117.2 108.12 115.64 108.12Q114.08 108.12 113.16 107.58Q112.24 107.03 111.83 106.13Q111.42 105.23 111.42 104.24Q111.42 102.58 112.38 100.81Q113.33 99.04 114.88 97.29Q116.42 95.54 118.26 93.94Q120.09 92.34 121.83 91.09L122.37 90.98Q121.83 91.19 121.22 91.55Q120.6 91.9 120.03 92.26Q119.45 92.62 118.9 92.87Q118.36 93.13 117.88 93.13Q117.24 93.13 116.78 92.7Q116.32 92.28 115.74 92.28Q115.2 92.28 114.82 92.74Q114.45 93.19 114.08 94.38L113.67 95.64H113.02L113.8 93.16Q114.48 91.16 115.28 90.42Q116.08 89.69 116.97 89.69Q117.61 89.69 118.07 90.03Q118.53 90.37 118.99 90.7Q119.45 91.02 120.09 91.02Q120.91 91.02 121.56 90.76Q122.2 90.51 122.81 89.97L123.29 89.32L124 89.66Q122.24 91.12 120.59 92.79Q118.94 94.45 117.63 96.27Q116.32 98.09 115.54 100.05Q114.76 102 114.76 104.04Q114.76 105.74 115.27 106.42Q115.78 107.1 116.63 107.1Q117.65 107.1 118.77 106.47Q119.89 105.84 120.94 104.65ZM124.85 107.13Q126.52 107.13 127.76 106.18Q129 105.23 129.82 103.72Q130.63 102.2 131.06 100.45Q131.48 98.7 131.55 97.09Q131.62 95.47 131.31 94.35Q130.67 94.21 129.92 93.86Q129.17 93.5 128.63 92.87Q128.08 92.24 128.08 91.32Q128.08 90.44 128.56 90.07Q129.04 89.69 129.51 89.69Q130.02 89.69 130.41 90Q130.8 90.3 131.11 90.85Q131.42 91.39 131.65 92.12Q131.89 92.85 132.03 93.7Q132.37 95.23 132.3 97.14Q132.23 99.04 131.72 100.96Q131.21 102.88 130.19 104.52Q129.17 106.15 127.62 107.13Q126.08 108.12 123.94 108.12Q122.85 108.12 121.93 107.71Q121.01 107.3 120.45 106.28Q119.89 105.27 119.89 103.46Q119.89 101.97 120.38 100.54Q120.88 99.11 121.66 97.95Q122.44 96.8 123.29 96.12Q124.14 95.44 124.85 95.44Q125.36 95.44 125.62 95.81Q125.87 96.19 125.96 96.75Q126.04 97.31 126.04 97.82Q126.04 99.66 125.04 101.56Q124.04 103.46 121.93 105.06L121.76 104.45Q123.36 103.19 124.31 101.39Q125.26 99.59 125.26 97.78Q125.26 97.1 125.13 96.65Q124.99 96.19 124.62 96.19Q124.07 96.19 123.39 97.05Q122.71 97.92 122.22 99.26Q121.73 100.61 121.73 102.1Q121.73 103.33 122.02 104.48Q122.3 105.64 123 106.39Q123.7 107.13 124.85 107.13Z"/>
+      <path fill="#2E1C16" d="M67.76 122.17Q72.48 122.17 74.79 124.32Q77.09 126.47 77.09 130.47Q77.09 133.09 75.96 135.05Q74.84 137 72.69 138.08Q70.54 139.16 67.54 139.16Q67.16 139.16 66.53 139.14Q65.91 139.11 65.24 139.1Q64.56 139.09 64.04 139.09Q62.98 139.09 61.96 139.1Q60.94 139.11 60.34 139.16V138.68Q61.11 138.63 61.49 138.49Q61.88 138.34 62.01 137.91Q62.14 137.48 62.14 136.62V124.71Q62.14 123.83 62.01 123.41Q61.88 122.98 61.48 122.83Q61.08 122.67 60.34 122.65V122.17Q60.94 122.19 61.96 122.23Q62.98 122.27 63.99 122.24Q64.85 122.22 65.94 122.19Q67.04 122.17 67.76 122.17ZM67.73 122.6Q66.63 122.6 66.29 123.01Q65.96 123.42 65.96 124.67V136.66Q65.96 137.91 66.3 138.32Q66.65 138.73 67.76 138.73Q69.77 138.73 70.94 137.78Q72.1 136.83 72.6 135.01Q73.11 133.19 73.11 130.57Q73.11 127.88 72.57 126.12Q72.03 124.35 70.85 123.48Q69.68 122.6 67.73 122.6Z M88.9 122.12 94.73 137.15Q95.07 138.01 95.49 138.33Q95.91 138.66 96.24 138.68V139.16Q95.52 139.11 94.55 139.1Q93.58 139.09 92.6 139.09Q91.49 139.09 90.51 139.1Q89.52 139.11 88.95 139.16V138.68Q90.17 138.63 90.5 138.26Q90.82 137.89 90.34 136.66L86.26 125.5L86.69 124.88L83.04 134.38Q82.52 135.71 82.41 136.55Q82.3 137.38 82.53 137.84Q82.76 138.3 83.27 138.48Q83.79 138.66 84.51 138.68V139.16Q83.72 139.11 83 139.1Q82.28 139.09 81.53 139.09Q81 139.09 80.54 139.1Q80.07 139.11 79.71 139.16V138.68Q80.21 138.59 80.74 138.03Q81.27 137.48 81.77 136.16L87.24 122.12Q87.63 122.14 88.07 122.14Q88.52 122.14 88.9 122.12ZM90.58 132.25V132.73H83.43L83.67 132.25Z M106.23 122.17V122.65Q105.46 122.67 105.06 122.83Q104.67 122.98 104.55 123.41Q104.43 123.83 104.43 124.71V136.62Q104.43 137.48 104.56 137.91Q104.69 138.34 105.08 138.49Q105.46 138.63 106.23 138.68V139.16Q105.58 139.11 104.6 139.1Q103.61 139.09 102.6 139.09Q101.43 139.09 100.43 139.1Q99.44 139.11 98.81 139.16V138.68Q99.58 138.63 99.96 138.49Q100.35 138.34 100.48 137.91Q100.61 137.48 100.61 136.62V124.71Q100.61 123.83 100.48 123.41Q100.35 122.98 99.95 122.83Q99.56 122.67 98.81 122.65V122.17Q99.44 122.19 100.43 122.22Q101.43 122.24 102.6 122.24Q103.61 122.24 104.6 122.22Q105.58 122.19 106.23 122.17Z M117.32 122.17V122.65Q116.5 122.67 116.08 122.83Q115.66 122.98 115.52 123.41Q115.37 123.83 115.37 124.71V136.91Q115.37 137.65 115.48 138.01Q115.59 138.37 115.91 138.49Q116.24 138.61 116.88 138.61H118.06Q118.88 138.61 119.6 138.23Q120.32 137.84 120.89 137.13Q121.47 136.43 121.85 135.44Q122.24 134.46 122.43 133.26H122.98Q122.91 134.07 122.91 135.37Q122.91 135.92 122.93 136.98Q122.96 138.03 123.08 139.16Q121.85 139.11 120.32 139.1Q118.78 139.09 117.58 139.09Q116.98 139.09 116.04 139.09Q115.11 139.09 114.03 139.1Q112.95 139.11 111.84 139.12Q110.74 139.14 109.76 139.16V138.68Q110.52 138.63 110.91 138.49Q111.29 138.34 111.42 137.91Q111.56 137.48 111.56 136.62V124.71Q111.56 123.83 111.42 123.41Q111.29 122.98 110.9 122.83Q110.5 122.67 109.76 122.65V122.17Q110.36 122.19 111.38 122.22Q112.4 122.24 113.55 122.24Q114.6 122.24 115.62 122.22Q116.64 122.19 117.32 122.17Z M140.33 122.14V122.62Q139.8 122.84 139.25 123.48Q138.7 124.11 138.03 125.41L133.49 134.38H132.36L126.75 123.99Q126.32 123.18 125.97 122.91Q125.62 122.65 125.36 122.65V122.14Q126 122.22 126.69 122.24Q127.37 122.27 128.19 122.27Q129.24 122.27 130.47 122.23Q131.69 122.19 132.7 122.14V122.65Q132.1 122.65 131.62 122.75Q131.14 122.84 130.95 123.09Q130.76 123.34 131.04 123.9L134.84 131.19L134.09 132.15L136.56 127.19Q137.45 125.46 137.51 124.47Q137.57 123.49 137.03 123.07Q136.49 122.65 135.51 122.62V122.14Q136.32 122.17 137.04 122.19Q137.76 122.22 138.51 122.22Q139.04 122.22 139.5 122.19Q139.97 122.17 140.33 122.14ZM135.2 130.59V136.62Q135.2 137.48 135.33 137.91Q135.46 138.34 135.84 138.49Q136.23 138.63 137 138.68V139.16Q136.35 139.11 135.33 139.1Q134.31 139.09 133.3 139.09Q132.17 139.09 131.16 139.1Q130.16 139.11 129.58 139.16V138.68Q130.35 138.63 130.73 138.49Q131.12 138.34 131.25 137.91Q131.38 137.48 131.38 136.62V131.7L133.47 133.19Z"/>
+    </svg>
   </div>
+  <img class="pfd-html-splash-tag" src="data:image/png;base64,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" alt="one meaningful idea, every part of your life.">
 </div>
+<div id="root"></div>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="purchases-capacitor.js"></script>
+<script src="analytics.js"></script>
+<script src="notifications.js"></script>
+<script src="personalization-constants.js"></script>
+<script src="idea-metadata.js"></script>
+<script src="recommendation-engine.js"></script>
+<script src="recommendation-composer.js"></script>
+<script src="plan-day-coherence.js"></script>
+<script src="persona-fixtures.js"></script>
+<script>window.RCPurchases=RCPurchases;</script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyC038zM-3E0pawUnhPi-V7pprz_Q0DRK10",
+    authDomain: "passion-flow-daily.firebaseapp.com",
+    projectId: "passion-flow-daily",
+    storageBucket: "passion-flow-daily.firebasestorage.app",
+    messagingSenderId: "307906430534",
+    appId: "1:307906430534:web:12b2bc91d05a7c47c76c47"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.db = firebase.firestore();
+  try {
+    if (firebase.analytics) window.firebaseAnalytics = firebase.analytics();
+  } catch (e) {}
+</script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { serif: ['Playfair Display'], sans: ['Inter','system-ui','sans-serif'] },
+        colors: { accent: '#C49A7A', body: '#614433', headline: '#2E1C16', cream: '#FAF6F2' }
+      }
+    }
+  };
+</script>
 <script type="text/babel">
 var R = React;
 var useState = R.useState, useRef = R.useRef, useCallback = R.useCallback, useMemo = R.useMemo, useEffect = R.useEffect;
@@ -290,18 +354,32 @@ function cardPickGradient(cardId){
   };
   return m[cardId]||m.create;
 }
-function dailyFlowGradient(){
-  return 'linear-gradient(135deg, #FCE4EC 0%, #F3EBF8 48%, #E6F3EC 100%)';
-}
-function streakBadgeGradient(){
-  return 'linear-gradient(135deg, #FAD4E0 0%, #E8DCF8 35%, #D4F0E4 68%, #FFF4CC 100%)';
-}
 function shareDayCardGradient(){
   return 'linear-gradient(160deg, #FCE4EC 0%, #FAF6F2 40%, #EDE6F6 70%, #E0F2E9 100%)';
+}
+function shareDayCardGradientAcross(){
+  return 'linear-gradient(90deg, #FCE4EC 0%, #FAF6F2 40%, #EDE6F6 70%, #E0F2E9 100%)';
+}
+function dailyFlowGradient(){
+  return shareDayCardGradientAcross();
+}
+function streakBadgeGradient(){
+  return shareDayCardGradientAcross();
 }
 function shareDayCardGradientSoft(){
   return 'linear-gradient(160deg, rgba(252,228,236,0.62) 0%, #FFFFFF 36%, rgba(237,230,246,0.42) 68%, rgba(224,242,233,0.48) 100%)';
 }
+function cardWashGradient(card){
+  return 'linear-gradient(160deg, '+(card&&card.color?card.color:'#FCE4EC')+' 0%, rgba(255,255,255,0.96) 78%)';
+}
+var ONBOARD_SIDES=[
+  {id:'create',label:'Create'},
+  {id:'learn',label:'Learn'},
+  {id:'move',label:'Move'},
+  {id:'connect',label:'Connect'},
+  {id:'explore',label:'Explore',emoji:'\uD83C\uDF1F',color:'#F3EBF8',borderColor:'#D4C2E8'},
+  {id:'nourish',label:'Slow down'}
+];
 
 var FOCUS_PACKS = {
   create: [
@@ -2211,7 +2289,6 @@ function migrateObAnswersToProfile(obAnswers){
 function profileIsComplete(profile){return !!(profile&&profile.completedAt);}
 
 function App(){
-  useEffect(function(){var el=document.getElementById('html-splash');if(el)el.remove();},[]);
   useEffect(function(){
     if(window.PFDIdeaMetadata&&typeof FOCUS_PACKS!=='undefined'){
       window.pfdIdeaIndex=window.PFDIdeaMetadata.buildIdeaIndex(FOCUS_PACKS);
@@ -2222,6 +2299,12 @@ function App(){
   },[showOnboard,obStep]);
   var _splash=useState(true),showSplash=_splash[0],setShowSplash=_splash[1];
   var _splashFade=useState(false),splashFading=_splashFade[0],setSplashFading=_splashFade[1];
+  useEffect(function(){
+    var el=document.getElementById('html-splash');
+    if(!el)return;
+    if(splashFading)el.classList.add('splash-out');
+    if(!showSplash)el.remove();
+  },[splashFading,showSplash]);
   var _onboard=useState(false),showOnboard=_onboard[0],setShowOnboard=_onboard[1];
   var _obStep=useState(0),obStep=_obStep[0],setObStep=_obStep[1];
   var _obSub=useState(0),obSub=_obSub[0],setObSub=_obSub[1];
@@ -2841,6 +2924,7 @@ function App(){
   }
   function enterMainApp(){
     try{localStorage.setItem('pfd_onboarded','1');}catch(e){}
+    existingAccountRef.current=true;
     showOnboardRef.current=false;
     setShowOnboard(false);
     switchMobileTab('flow',false);
@@ -3150,6 +3234,7 @@ function App(){
     var next=syncCommunityNameFields(syncProjectNameFields(Object.assign({},profile,{version:3,updatedAt:Date.now()})));
     if(wasSkipped){next.skippedAt=Date.now();}else{next.completedAt=Date.now();next.skippedAt=null;}
     setPersonalizationProfile(next);
+    existingAccountRef.current=true;
     markPersonalized();
     savePersonalizationProfileToCloud(currentUser&&currentUser.uid,next,behaviorSignals);
     trackEvent(wasSkipped?'personalization_skipped':'onboarding_layer1_complete',{goals:(next.overallGoals||[]).length,frictions:(next.coreFrictions||[]).length});
@@ -3257,7 +3342,7 @@ function App(){
     return {
       title:'A first look, made for you',
       subtitle:subtitle,
-      footer:'A fresh flow every morning. Personalize it further in the app to make it even more yours.'
+      footer:<span>A fresh flow every morning. Personalize it further<br/>in the app to make it even more yours.</span>
     };
   }
   function unlockDailyFlowCta(pro){
@@ -3271,18 +3356,18 @@ function App(){
   function renderOnboardingPayoffScreen(){
     if(onboardingPayoffPlan){
       var copy=buildOnboardingPayoffCopy(personalizationProfile,onboardingWasSkipped);
-      return <div className="ob-fade-up text-center flex flex-col w-full flex-1 min-h-0 overflow-hidden">
+      return <div className="ob-fade-up ob-payoff-stack text-center overflow-hidden">
         <div className="flex-shrink-0 px-1">
           <p className="text-[20px] mb-0.5">{'\u2728'}</p>
           <p className="font-serif text-[19px] md:text-[21px] text-headline italic mb-1 leading-snug">{copy.title}</p>
           <p className="font-sans text-[12px] text-headline mb-2 leading-snug px-1">{copy.subtitle}</p>
         </div>
-        <div className="flex-1 min-h-0 flex flex-col gap-2 text-left px-0.5">
+        <div className="ob-payoff-cards text-left px-0.5">
           {CARDS.map(function(c){
             var item=onboardingPayoffPlan[c.id];
             if(!item)return null;
             var shufflesLeft=OB_PAYOFF_SHUFFLES-(onboardingPayoffShuffleCount[c.id]||0);
-            return <div key={c.id} className="flex-1 min-h-0 flex items-center gap-2.5 rounded-[16px] pl-3 pr-2 py-2 border overflow-hidden" style={{background:'linear-gradient(160deg, '+c.color+' 0%, rgba(255,255,255,0.96) 78%)',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
+            return <div key={c.id} className="ob-payoff-card flex items-center gap-2.5 rounded-[16px] pl-3 pr-2 py-2 border overflow-hidden" style={{background:'linear-gradient(160deg, '+c.color+' 0%, rgba(255,255,255,0.96) 78%)',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
               <div className="w-[36px] h-[36px] rounded-[12px] flex items-center justify-center flex-shrink-0 text-[18px]" style={{background:cardPickGradient(c.id),boxShadow:'0 2px 8px rgba(0,0,0,0.12)'}}>{c.emoji}</div>
               <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden">
                 <p className="font-sans text-[10px] font-semibold text-body opacity-50 mb-0.5 flex-shrink-0">{c.title}</p>
@@ -3325,7 +3410,7 @@ function App(){
     return {
       title:copy.title,
       subtitle:copy.subtitle,
-      footer:'A fresh flow every morning, personalized to you.',
+      footer:<span>A fresh flow every morning. Personalize it further<br/>in the app to make it even more yours.</span>,
       settings:'Edit anytime in Settings.'
     };
   }
@@ -3408,20 +3493,13 @@ function App(){
   function isExistingUserForPersonalization(){
     return !!(existingAccountRef.current||(logsData&&logsData.length>0)||(obAnswers&&obAnswers.q1));
   }
-  function canEditPersonalizationFromSettings(){
-    if(!isExistingUserForPersonalization())return false;
-    var p=personalizationProfile;
-    return !!(p.deepPersonalizationCompleted||p.completedAt||(p.overallGoals||[]).length);
-  }
   function editPersonalizationFromSettings(){
-    if(!canEditPersonalizationFromSettings())return;
     openPersonalizeFlow('full',null,null,1,'settings');
     trackEvent('personalization_edit_open');
   }
   function renderPersonalizationRetestActions(){
-    if(!isExistingUserForPersonalization())return null;
     return <div className="mt-3 space-y-2">
-      {canEditPersonalizationFromSettings()&&<button type="button" onClick={editPersonalizationFromSettings} className="w-full font-sans text-[12px] font-medium py-2.5 rounded-full border text-center active:scale-[0.98]" style={{borderColor:'rgba(196,154,122,0.4)',color:'#C49A7A',background:'rgba(196,154,122,0.06)'}}>Edit my personalization</button>}
+      <button type="button" onClick={editPersonalizationFromSettings} className="w-full font-sans text-[12px] font-medium py-2.5 rounded-full border text-center active:scale-[0.98]" style={{borderColor:'rgba(196,154,122,0.4)',color:'#C49A7A',background:'rgba(196,154,122,0.06)'}}>Edit my personalization</button>
     </div>;
   }
   function toggleOverallGoal(goalId){
@@ -4181,13 +4259,13 @@ function App(){
     ];
     var l1=[
       {titleLines:['What would you love more','of in your life right now?'],emoji:'✨',sub:'Pick up to 4',body:<div className="flex flex-col gap-2 w-full max-w-[340px] mx-auto">{OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(pp.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleOverallGoal(opt.id);}} className="w-full font-sans text-[13px] px-4 py-2.5 rounded-full border transition-all active:scale-[0.98]" style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
-      {title:"What's been getting in the way of enjoying your days?",emoji:'🌙',sub:'Pick up to 2',body:<div className="flex flex-wrap gap-2 justify-center">{CORE_FRICTION_OPTIONS.map(function(opt){var sel=(pp.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[13px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
+      {titleLines:["What's been getting in the way","of enjoying your days?"],emoji:'🌙',sub:'Pick up to 2',body:<div className="flex flex-wrap gap-2 justify-center">{CORE_FRICTION_OPTIONS.map(function(opt){var sel=(pp.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[13px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={chipStyle(sel)}>{opt.label}</button>;})}</div>},
       {titleLines:['What does your','everyday life look like?'],emoji:'🕰️',sub:'Optional. Bandwidth and time matter most',body:renderEverydayLifeFields(pp,false)}
     ];
     if(personalizeMode==='full'){
       var FULL_TOTAL=11;
       if(deepPersonalizationStep===0){
-        return <div className="text-center"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Want better recommendations?</p><p className="font-sans text-[14px] text-headline mb-2 max-w-[300px] mx-auto">One quick survey, about a minute, so Pick for Me and Pick My Daily Flow feel more you. Skip any question, or all of them.</p></div>;
+        return <div className="text-center"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Want better recommendations?</p><p className="font-sans text-[14px] text-headline mb-2 max-w-[300px] mx-auto">One quick survey, about a minute, so Pick for Me and Pick My Daily Flow feel more you. You can go back anytime.</p></div>;
       }
       var fullScr=deepPersonalizationStep<=3?l1[deepPersonalizationStep-1]:layer2Screens[deepPersonalizationStep-4];
       return <div className="text-center">
@@ -4212,7 +4290,7 @@ function App(){
       </div>;
     }
     if(deepPersonalizationStep===0){
-      return <div className="text-center"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[14px] text-headline mb-2 max-w-[300px] mx-auto">A few quick screens so Pick for Me and Pick My Daily Flow feel more you. Skip any screen, or all of them.</p></div>;
+      return <div className="text-center"><p className="text-[32px] mb-2">✨</p><p className="font-serif text-[22px] text-headline italic mb-2">Quick fine-tune</p><p className="font-sans text-[14px] text-headline mb-2 max-w-[300px] mx-auto">A few quick screens so Pick for Me and Pick My Daily Flow feel more you. You can go back anytime.</p></div>;
     }
     var scr=layer2Screens[deepPersonalizationStep-1];
     return <div className="text-center"><p className="text-[24px] mb-1">{scr.emoji}</p>{renderPersonalizationStepTitle(scr)}<p className="font-sans text-[15px] font-medium text-headline mb-4 max-w-[300px] mx-auto">{scr.sub}</p><p className="font-sans text-[12px] text-headline mb-3">{deepPersonalizationStep} of {LAYER2_TOTAL}</p>{scr.body}</div>;
@@ -4222,25 +4300,26 @@ function App(){
     var FULL_TOTAL=11;
     var primaryCls='font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full';
     var secondaryCls='font-sans text-[13px] text-headline py-1';
+    var backBtn=deepPersonalizationStep>0?<button type="button" onClick={function(){setDeepPersonalizationStep(deepPersonalizationStep-1);}} className={secondaryCls}>Back</button>:null;
     if(personalizeMode==='full'){
       if(deepPersonalizationStep===0){
         return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){setDeepPersonalizationStep(1);}} className={primaryCls} style={{background:'#C49A7A'}}>Open personalization</button><button onClick={function(){finishDeepPersonalization(true);}} className={secondaryCls}>Not now</button></div>;
       }
       var fullLast=deepPersonalizationStep>=FULL_TOTAL;
-      return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){if(fullLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={primaryCls} style={{background:'#C49A7A'}}>{fullLast?'Save & finish':'Continue'}</button><button onClick={function(){if(fullLast)finishDeepPersonalization(true);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={secondaryCls}>{fullLast?'Skip & finish':'Skip this one'}</button></div>;
+      return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){if(fullLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={primaryCls} style={{background:'#C49A7A'}}>{fullLast?'Save & finish':'Continue'}</button>{backBtn}</div>;
     }
     if(personalizeMode==='layer1'){
       if(deepPersonalizationStep===0){
         return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){setDeepPersonalizationStep(1);}} className={primaryCls} style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className={secondaryCls}>Maybe later</button></div>;
       }
       var last1=deepPersonalizationStep>=3;
-      return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){if(last1)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={primaryCls} style={{background:'#C49A7A'}}>{last1?'Show me':'Continue'}</button>{!last1&&<button onClick={function(){setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={secondaryCls}>Skip this one</button>}</div>;
+      return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){if(last1)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={primaryCls} style={{background:'#C49A7A'}}>{last1?'Show me':'Continue'}</button>{backBtn}</div>;
     }
     if(deepPersonalizationStep===0){
-      return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){setDeepPersonalizationStep(1);}} className={primaryCls} style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className={secondaryCls}>Skip all</button></div>;
+      return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){setDeepPersonalizationStep(1);}} className={primaryCls} style={{background:'#C49A7A'}}>Let's go</button><button onClick={function(){finishDeepPersonalization(true);}} className={secondaryCls}>Not now</button></div>;
     }
     var isLast=deepPersonalizationStep>=LAYER2_TOTAL;
-    return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){if(isLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={primaryCls} style={{background:'#C49A7A'}}>{isLast?'Finish':'Continue'}</button><button onClick={function(){if(isLast)finishDeepPersonalization(true);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={secondaryCls}>{isLast?'Skip & finish':'Skip'}</button></div>;
+    return <div className="flex flex-col items-center gap-2 w-full"><button onClick={function(){if(isLast)finishDeepPersonalization(false);else setDeepPersonalizationStep(deepPersonalizationStep+1);}} className={primaryCls} style={{background:'#C49A7A'}}>{isLast?'Finish':'Continue'}</button>{backBtn}</div>;
   }
   function renderDeepPersonalizationScreen(){
     return <><div className="flex-1 overflow-y-auto min-h-0">{renderDeepPersonalizationBody()}</div><div className="flex-shrink-0 pt-3 mt-2" style={{borderTop:'1px solid rgba(196,154,122,0.12)'}}>{renderDeepPersonalizationActions()}</div></>;
@@ -4471,9 +4550,12 @@ function App(){
     var user=firebase.auth().currentUser;
     if(!user)return;
     var uid=user.uid;
-    user.delete().then(function(){
+    // Delete Firestore while still authenticated. Rules require request.auth.uid == uid,
+    // so this must happen before Firebase Auth delete or user data is left behind.
+    window.db.collection('users').doc(uid).delete().then(function(){
       try{localStorage.removeItem('pfd_backup_'+uid);clearDevPro(uid);}catch(e){}
-      window.db.collection('users').doc(uid).delete().catch(function(){});
+      return user.delete();
+    }).then(function(){
       setCurrentUser(null);setUserLoaded(false);resetUserData();setUserName('');
       setShowAuth(false);setShowOnboard(false);
       setShowOnboard(true);
@@ -5256,6 +5338,7 @@ function App(){
   var _hp=useState(0),heroPhone=_hp[0],setHeroPhone=_hp[1];
   var _ld=useState(0),landDemo=_ld[0],setLandDemo=_ld[1];
   var _demoDone=useState(false),demoDone=_demoDone[0],setDemoDone=_demoDone[1];
+  var _demoProgress=useState(0),demoProgress=_demoProgress[0],setDemoProgress=_demoProgress[1];
   var _ep=useState(null),expandedPack=_ep[0],setExpandedPack=_ep[1];
   useEffect(function(){
     // heroStep no longer used in hero — interval removed
@@ -5269,8 +5352,36 @@ function App(){
   },[showLanding,heroPhone]);
   useEffect(function(){
     if(!(showOnboard&&obStep===8))return;
+    var DEMO_MS=26000;
+    var finished=false;
+    function finishDemo(){
+      if(finished)return;
+      finished=true;
+      setDemoProgress(100);
+      setDemoDone(true);
+      var vid=onboardingDemoVideoRef.current;
+      if(vid){
+        vid.loop=true;
+        var replay=vid.play();
+        if(replay&&typeof replay.catch==='function')replay.catch(function(){});
+      }
+    }
     setDemoDone(false);
-    var fallback=setTimeout(function(){setDemoDone(true);},28000);
+    setDemoProgress(0);
+    var start=Date.now();
+    var fallback=setTimeout(finishDemo,DEMO_MS);
+    var tick=setInterval(function(){
+      if(finished)return;
+      var v=onboardingDemoVideoRef.current;
+      var pct;
+      if(v&&isFinite(v.currentTime)&&v.currentTime>0){
+        pct=Math.min(100,(v.currentTime/(DEMO_MS/1000))*100);
+      }else{
+        pct=Math.min(100,((Date.now()-start)/DEMO_MS)*100);
+      }
+      setDemoProgress(pct);
+      if(pct>=100)finishDemo();
+    },80);
     var v=onboardingDemoVideoRef.current;
     if(v){
       v.muted=true;
@@ -5279,11 +5390,11 @@ function App(){
       try{v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');}catch(e){}
       try{v.currentTime=0;}catch(e2){}
       var p=v.play();
-      if(p&&typeof p.catch==='function')p.catch(function(){setDemoDone(true);});
+      if(p&&typeof p.catch==='function')p.catch(function(){finishDemo();});
     }else{
-      setDemoDone(true);
+      finishDemo();
     }
-    return function(){clearTimeout(fallback);};
+    return function(){clearTimeout(fallback);clearInterval(tick);};
   },[showOnboard,obStep]);
   useEffect(function(){
     if(!showLanding)return;
@@ -5291,17 +5402,17 @@ function App(){
     return function(){clearInterval(t);};
   },[showLanding]);
 
-  // Auto-advance wheel slide: title → body → wheel → pills → closing line
+  // Auto-advance wheel slide: title → body → wheel → each pill → closing line
   useEffect(function(){
-    if(obStep!==4||obSub>=4)return;
-    var t=setTimeout(function(){setObSub(function(s){return s+1;});},obSub===0?850:750);
+    if(obStep!==4||obSub>=8)return;
+    var t=setTimeout(function(){setObSub(function(s){return s+1;});},obSub===0?850:obSub>=3&&obSub<8?520:750);
     return function(){clearTimeout(t);};
   },[obStep,obSub]);
 
-  // Auto-advance create → explore → learn → move → connect after first tap
+  // Auto-advance create → learn → move → connect → explore → slow down after first tap
   useEffect(function(){
-    if(obStep!==1||obSub<1||obSub>=5)return;
-    var t=setTimeout(function(){setObSub(function(s){return s+1;});},obSub===4?800:650);
+    if(obStep!==1||obSub<1||obSub>=7)return;
+    var t=setTimeout(function(){setObSub(function(s){return s+1;});},obSub===6?800:650);
     return function(){clearTimeout(t);};
   },[obStep,obSub]);
 
@@ -5328,20 +5439,32 @@ function App(){
   },[]);
 
   useEffect(function(){
-    // Wait for Firebase to resolve auth state, but show splash for at least 3.5s
-    // so the fast→slow wheel animation has time to play fully
-    var authReady=false,timerReady=false,hidden=false,notLoggedIn=false;
+    // Leave as soon as the wheel finishes spinning. Auth can resolve in parallel.
+    var authReady=false,spinReady=false,hidden=false,notLoggedIn=false;
     function tryHide(){
-      if(hidden||!authReady||!timerReady)return;
+      if(hidden||!authReady||!spinReady)return;
       hidden=true;
       setSplashFading(true);
       setTimeout(function(){
-        setShowSplash(false);
         if(notLoggedIn){
           if(localStorage.getItem('pfd_onboarded')){setShowAuth(true);setAuthMode('login');}
           else{setShowOnboard(true);}
         }
-      },650);
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){setShowSplash(false);});
+        });
+      },160);
+    }
+    function onSpinDone(){
+      if(spinReady)return;
+      spinReady=true;
+      if(!authReady){
+        // Firebase auth hasn't resolved — likely offline on cold start.
+        setIsOffline(true);
+        notLoggedIn=true;
+        authReady=true;
+      }
+      tryHide();
     }
     var unsub=firebase.auth().onAuthStateChanged(function(u){
       unsub();
@@ -5349,18 +5472,17 @@ function App(){
       authReady=true;
       tryHide();
     });
-    var t=setTimeout(function(){
-      timerReady=true;
-      if(!authReady){
-        // Firebase auth hasn't resolved — likely offline on cold start.
-        // Force-exit the splash so the app doesn't hang indefinitely.
-        setIsOffline(true);
-        notLoggedIn=true;
-        authReady=true;
-      }
-      tryHide();
-    },3500);
-    return function(){clearTimeout(t);};
+    var ring=document.querySelector('#html-splash .pfd-html-splash-ring');
+    function onAnimEnd(e){
+      if(e&&e.animationName&&e.animationName!=='splashSpin')return;
+      onSpinDone();
+    }
+    if(ring)ring.addEventListener('animationend',onAnimEnd);
+    var t=setTimeout(onSpinDone,3200);
+    return function(){
+      clearTimeout(t);
+      if(ring)ring.removeEventListener('animationend',onAnimEnd);
+    };
   },[]);
 
   var RC_PRODUCT_IDS={monthly:'com.passionflowdaily.app.monthly',yearly:'com.passionflowdaily.app.yearly'};
@@ -6030,7 +6152,7 @@ function App(){
         <p className="font-sans text-[10px] font-medium text-body opacity-40 tracking-[0.15em] uppercase mb-2">{dateStr}</p>
         <div className="flex items-center justify-between gap-3 mb-1">
           <h1 className="font-serif text-[20px] text-headline leading-tight min-w-0 flex-1"><span className="not-italic">Welcome back, </span><span className="italic">{userName}</span><span className="not-italic">. {'\u2728'}</span></h1>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full flex-shrink-0" style={{background:streakBadgeGradient(),border:'1px solid rgba(255,255,255,0.5)',boxShadow:'0 0 14px rgba(196,154,122,0.18)'}}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full flex-shrink-0" style={{background:streakBadgeGradient(),border:'1px solid rgba(196,154,122,0.22)',boxShadow:'0 4px 18px rgba(196,154,122,0.12), 0 1px 4px rgba(0,0,0,0.03)'}}>
             <span className="text-[14px]">{'\uD83D\uDD25'}</span>
             <div className="text-right"><p className="font-sans text-[14px] font-bold text-headline leading-none">{streak}</p><p className="font-sans text-[9px] text-headline opacity-60">day streak</p></div>
           </div>
@@ -6408,7 +6530,7 @@ function App(){
         {/* About */}
         <div className="text-center py-4 opacity-40">
           <p className="font-serif text-[12px] text-headline italic">Passion Flow Daily</p>
-          <p className="font-sans text-[9px] text-body mt-1">v1.0 — made with {'\u2764\uFE0F'}</p>
+          <p className="font-sans text-[9px] text-body mt-1">v1.0.7 — made with {'\u2764\uFE0F'}</p>
         </div>
       </div>}
 
@@ -6538,7 +6660,7 @@ function App(){
             </div>
             <div className="flex items-center gap-3">
               <button onClick={function(){setShowLanding(true);}} className="font-sans text-[11px] text-body opacity-30 hover:opacity-60 transition-opacity px-3 py-1.5 rounded-full" style={{border:'1px solid rgba(196,154,122,0.2)'}}>preview landing</button>
-              <div className="flex items-center gap-2 px-3.5 py-2 rounded-full" style={{background:streakBadgeGradient(),border:'1px solid rgba(255,255,255,0.5)',boxShadow:'0 0 12px rgba(196,154,122,0.15)'}}>
+              <div className="flex items-center gap-2 px-3.5 py-2 rounded-full" style={{background:streakBadgeGradient(),border:'1px solid rgba(196,154,122,0.22)',boxShadow:'0 4px 18px rgba(196,154,122,0.12), 0 1px 4px rgba(0,0,0,0.03)'}}>
                 <span className="text-[16px]">{'\uD83D\uDD25'}</span>
                 <div className="text-right"><p className="font-sans text-[15px] font-bold text-headline leading-none">{streak}</p><p className="font-sans text-[8px] text-body opacity-40">day streak</p></div>
               </div>
@@ -6839,7 +6961,7 @@ function App(){
                 {/* About */}
                 <div className="text-center py-4 opacity-40">
                   <p className="font-serif text-[13px] text-headline italic">Passion Flow Daily</p>
-                  <p className="font-sans text-[10px] text-body mt-1">v1.0 — made with {'\u2764\uFE0F'}</p>
+                  <p className="font-sans text-[10px] text-body mt-1">v1.0.7 — made with {'\u2764\uFE0F'}</p>
                 </div>
               </div>
             </div>
@@ -7842,126 +7964,98 @@ function App(){
       </footer>
 
     </div>;}())}
-    {/* Splash screen */}
-    {showSplash&&(function(){
-      var splashSize=Math.min(window.innerWidth*0.7,400);
-      var sCx=splashSize/2,sCy=splashSize/2,sOuterR=splashSize*0.47,sInnerR=splashSize*0.25;
-      var sSliceAngle=360/5;
-      function sPolar(r,deg){var rad=(deg-90)*Math.PI/180;return{x:sCx+r*Math.cos(rad),y:sCy+r*Math.sin(rad)};}
-      function sSlice(i){
-        var s=i*sSliceAngle,e=(i+1)*sSliceAngle;
-        var os=sPolar(sOuterR,s),oe=sPolar(sOuterR,e),ie=sPolar(sInnerR,e),is2=sPolar(sInnerR,s);
-        return 'M '+os.x+' '+os.y+' A '+sOuterR+' '+sOuterR+' 0 0 1 '+oe.x+' '+oe.y+' L '+ie.x+' '+ie.y+' A '+sInnerR+' '+sInnerR+' 0 0 0 '+is2.x+' '+is2.y+' Z';
-      }
-      return <div className={'fixed inset-0 z-[100] flex flex-col items-center justify-center '+(splashFading?'splash-out':'')}
-        style={{background:'linear-gradient(160deg, #F8EAEA 0%, #F3DCDC 35%, #FAF6F2 70%, #F5DDDE 100%)'}}>
-
-        {/* Glow */}
-        <div className="absolute splash-glow" style={{width:splashSize*0.8,height:splashSize*0.8,borderRadius:'50%',background:'radial-gradient(circle, rgba(196,154,122,0.15) 0%, transparent 70%)'}}/>
-
-        {/* Spinning wheel */}
-        <div className="splash-logo relative" style={{width:splashSize,height:splashSize}}>
-          <svg width={splashSize} height={splashSize} viewBox={'0 0 '+splashSize+' '+splashSize}
-            style={{animation:'splashSpin 3.5s linear forwards'}}>
-            {CARDS.map(function(c,i){
-              return <path key={c.id} d={sSlice(i)} fill={c.color} fillOpacity={0.8} stroke="white" strokeWidth="2.5"/>;
-            })}
-            <circle cx={sCx} cy={sCy} r={sInnerR-2} fill="white" stroke="rgba(196,154,122,0.12)" strokeWidth="1.5"/>
-          </svg>
-
-          {/* Center logo — doesn't spin */}
-          <div className="absolute flex flex-col items-center justify-center text-center" style={{left:sCx-sInnerR+5,top:sCy-sInnerR+5,width:(sInnerR-5)*2,height:(sInnerR-5)*2}}>
-            <p className="font-serif text-headline uppercase tracking-[0.15em]" style={{fontSize:splashSize*0.04+'px',fontWeight:400,letterSpacing:'0.2em'}}>Passion</p>
-            <p className="font-serif text-headline italic" style={{fontSize:splashSize*0.09+'px',lineHeight:1,marginTop:'-2px'}}>Flow</p>
-            <p className="font-serif text-headline uppercase" style={{fontSize:splashSize*0.065+'px',fontWeight:700,letterSpacing:'0.08em',marginTop:'-2px'}}>DAILY</p>
-          </div>
-        </div>
-
-        {/* Tagline */}
-        <p className="splash-tag font-serif text-[14px] md:text-[18px] text-headline italic opacity-60 mt-6">one meaningful idea, every part of your life.</p>
-      </div>;
-    })()}
+    {/* Splash screen is the #html-splash wheel, already spinning from first paint. */}
 
     {/* Onboarding */}
-    {showOnboard&&!showPaywall&&<div className={'fixed inset-0 z-[90] flex flex-col items-center px-6 '+(obStep===9&&obSub<3?'justify-start overflow-y-auto':obStep===11?'justify-start overflow-hidden':'justify-center')}
-      style={{background:'linear-gradient(160deg, #F8EAEA 0%, #F3DCDC 35%, #FAF6F2 70%, #F5DDDE 100%)',paddingTop:(obStep===9||obStep===11)?'max(1.25rem, calc(env(safe-area-inset-top) + 0.75rem))':undefined,paddingBottom:(obStep===9||obStep===11)?'max(1.25rem, calc(env(safe-area-inset-bottom) + 1rem))':undefined}}>
+    {showOnboard&&!showPaywall&&<div className={'z-[90] flex flex-col '+(obStep===11?'overflow-hidden':'overflow-y-auto')}
+      style={{position:'fixed',top:0,right:0,bottom:0,left:0,width:'100%',height:'100dvh',background:shareDayCardGradient()}}>
+      <div className="ob-wash-drift" aria-hidden="true"/>
+      <div className={'relative z-[1] w-full flex flex-col items-center px-6 '+(obStep===11?'flex-1 min-h-0 justify-start':((obStep===9&&obSub===2)?'min-h-[100dvh] justify-start':'min-h-[100dvh] justify-center'))}
+        style={{paddingTop:(obStep===9&&obSub===2)?'max(3.75rem, calc(env(safe-area-inset-top) + 2.75rem))':'max(1.5rem, calc(env(safe-area-inset-top) + 1rem))',paddingBottom:'max(1.75rem, calc(env(safe-area-inset-bottom) + 1.25rem))'}}>
       <div className={'max-w-[440px] w-full text-center '+(obStep===11?'flex-1 flex flex-col min-h-0':'')}>
 
-        {/* Screen 1 — Hook */}
+        {/* Screen 1 — The feeling */}
         {obStep===0&&<div>
-          <p className="ob-cinematic font-sans text-[28px] md:text-[38px] text-headline leading-[1.2] mb-8 font-medium">Life wasn't meant to<br/><span className="font-serif italic text-accent">feel this repetitive.</span></p>
-          <p className="ob-cinematic font-sans text-[24px] md:text-[32px] text-headline leading-[1.3] mb-6 font-medium" style={{animationDelay:'0.85s'}}><span className="block whitespace-nowrap">Somewhere along the way,</span><span className="block whitespace-nowrap">you stopped feeling</span><span className="block whitespace-nowrap">excited <span className="font-serif italic text-accent">by your own life.</span></span></p>
-          <button onClick={function(){setObStep(1);setObSub(0);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.7s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>continue</button>
+          <p className="ob-cinematic font-sans text-[28px] md:text-[38px] text-headline leading-[1.2] mb-8 font-medium"><span className="block">Life wasn't meant</span><span className="block">to feel like the</span><span className="block font-serif italic text-accent">same day on repeat.</span></p>
+          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-[1.3] mb-6 font-medium" style={{animationDelay:'0.85s'}}><span className="block">Somewhere along the way,</span><span className="block">you stopped making room</span><span className="block">for <span className="font-serif italic text-accent">what excites you.</span></span></p>
+          <button onClick={function(){setObStep(1);setObSub(0);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.7s',background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
         </div>}
 
-        {/* Screen 2 — Multi-passionate (tap once, then auto-reveal) */}
+        {/* Screen 2 — The many sides of you */}
         {obStep===1&&<div>
-          {obSub>=0&&<p className="ob-blur-in font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-5 font-medium">You were meant to <span className="font-serif italic font-bold text-accent">create.</span></p>}
-          {obSub>=1&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-5" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">explore.</span></p>}
-          {obSub>=2&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-5" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">learn.</span></p>}
-          {obSub>=3&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-5" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">move.</span></p>}
-          {obSub>=4&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline leading-relaxed font-medium mb-6" style={{animationDelay:'0.1s'}}>To <span className="font-serif italic font-semibold text-accent">connect.</span></p>}
-          {obSub>=5&&<p className="ob-blur-in font-sans text-[18px] md:text-[22px] text-headline leading-relaxed font-medium mb-6" style={{animationDelay:'0.1s'}}>Not become just <span className="font-serif italic font-semibold text-accent">one thing.</span></p>}
-          {obSub===0?<button onClick={function(){setObSub(1);}} className="font-sans text-[12px] text-accent opacity-50 mt-10 underline underline-offset-4">tap to continue</button>
-          :obSub>=5?<button onClick={function(){setObStep(2);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'0.5s',background:'#C49A7A'}}>continue</button>
+          {obSub>=0&&<p className="ob-blur-in font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-4 font-medium">You were meant to</p>}
+          {obSub>=1&&<div className="flex flex-col items-center gap-1.5 mb-4">
+            {ONBOARD_SIDES.map(function(side,i){
+              if(obSub<1+i)return null;
+              var c=CARDS.find(function(x){return x.id===side.id;})||side;
+              return <span key={side.id} className="ob-blur-in inline-flex items-center gap-2 font-sans text-[14px] font-medium px-4 py-1.5 rounded-full" style={{animationDelay:'0.05s',background:cardWashGradient(c),border:'1px solid '+(c.borderColor||'#C49A7A'),color:'#2E1C16',boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>{c.emoji} {side.label}</span>;
+            })}
+          </div>}
+          {obSub>=7&&<p className="ob-blur-in font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] font-medium mb-6">You were never meant to<br/><span className="font-serif italic font-semibold text-accent">be just one thing.</span></p>}
+          {obSub===0?<button onClick={function(){setObSub(1);}} className="ob-tap-breathe font-sans text-[12px] text-headline mt-10 underline underline-offset-4">tap to continue</button>
+          :obSub>=7?<button onClick={function(){setObStep(2);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'0.5s',background:'#C49A7A'}}>Continue</button>
           :null}
         </div>}
 
-        {/* Screen 3 — Waiting */}
+        {/* Screen 3 — So much you want to do */}
         {obStep===2&&<div>
-          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">You keep waiting<br/>to feel <span className="font-serif italic font-bold text-accent">alive again.</span></p>
-          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>But someday<br/>never seems to come.</p>
-          <button onClick={function(){setObStep(3);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">But with so much<br/>you <span className="font-serif italic font-bold text-accent">want to do,</span></p>
+          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>it can be hard to know<br/><span className="font-serif italic font-bold text-accent">where to begin.</span></p>
+          <button onClick={function(){setObStep(3);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>Continue</button>
         </div>}
 
-        {/* Screen 4 — Shift */}
+        {/* Screen 4 — The shift */}
         {obStep===3&&<div>
-          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">The problem isn't <span className="font-serif italic text-body opacity-50">motivation.</span></p>
-          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>It's forgetting<br/>to live <span className="font-serif italic font-bold text-accent">fully.</span></p>
-          <button onClick={function(){setObStep(4);setObSub(0);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+          <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">You don't have to<br/>have it all <span className="font-serif italic font-bold text-accent">figured out.</span></p>
+          <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>You just need a way to bring<br/>what you love into your<br/><span className="font-serif italic font-bold text-accent">everyday life.</span></p>
+          <button onClick={function(){setObStep(4);setObSub(0);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>Continue</button>
         </div>}
 
-        {/* Screen 5 — Wheel (sequential reveal) */}
+        {/* Screen 5 — The five areas */}
         {obStep===4&&<div>
-          {obSub>=0&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline font-medium mb-2">Your life has <span className="font-serif italic text-accent">five parts.</span></p>}
-          {obSub>=1&&<p className="ob-blur-in font-sans text-[15px] md:text-[17px] text-body opacity-55 leading-relaxed mb-4">When one gets ignored,<br/>everything feels a little off.</p>}
+          {obSub>=0&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline font-medium mb-2 leading-snug"><span className="block">Passion Flow Daily gives you</span><span className="block">personalized ideas across</span><span className="block"><span className="font-serif italic text-accent">five areas of your life.</span></span></p>}
           {obSub>=2&&<div className="flex justify-center mb-4">
             <div className="ob-blur-in wheel-glow breathe" style={{width:260,height:260}}>
               <FlowWheel size={260} cardStates={{}} onOpen={function(){}}/>
             </div>
           </div>}
-          {obSub>=3&&<div className="ob-blur-in flex flex-col items-center gap-1.5 mb-4">
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {CARDS.slice(0,3).map(function(c){return <span key={c.id} className="font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;})}
+          {obSub>=3&&<div className="ob-blur-in mb-4">
+            <div className="flex justify-center gap-1.5 mb-1.5">
+              {CARDS.slice(0,3).map(function(c,i){
+                if(obSub<3+i)return null;
+                return <span key={c.id} className="ob-blur-in font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;
+              })}
             </div>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {CARDS.slice(3,5).map(function(c){return <span key={c.id} className="font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;})}
+            <div className="flex justify-center gap-1.5">
+              {CARDS.slice(3).map(function(c,i){
+                if(obSub<6+i)return null;
+                return <span key={c.id} className="ob-blur-in font-sans text-[11px] font-medium px-2.5 py-1 rounded-full" style={{background:c.color,border:'1px solid '+c.borderColor,color:'#614433'}}>{c.emoji} {c.title.split(' ')[0]}</span>;
+              })}
             </div>
           </div>}
-          {obSub>=4&&<p className="ob-blur-in font-sans text-[15px] md:text-[17px] text-body opacity-55 leading-relaxed mb-5">When they work together...<br/>life feels <span className="font-serif italic font-bold text-accent">alive again.</span></p>}
-          {obSub>=4&&<button onClick={function(){setObStep(5);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-8 active:scale-[0.97]" style={{animationDelay:'0.3s',background:'#C49A7A'}}>continue</button>}
+          {obSub>=8&&<p className="ob-blur-in font-sans text-[22px] md:text-[28px] text-headline font-medium mb-5 leading-snug"><span className="block">When they work together,</span><span className="block">life feels <span className="font-serif italic font-bold text-accent">alive again.</span></span></p>}
+          {obSub>=8&&<button onClick={function(){setObStep(5);setObSub(0);}} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-8 active:scale-[0.97]" style={{animationDelay:'0.3s',background:'#C49A7A'}}>Continue</button>}
         </div>}
 
-        {/* Screen 6 — One step */}
+        {/* Screen 6 — The first step */}
         {obStep===5&&<div>
           <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">You don't have<br/>to do <span className="font-serif italic text-accent">everything.</span></p>
           <p className="ob-cinematic font-sans text-[22px] md:text-[28px] text-headline leading-snug font-medium" style={{animationDelay:'0.9s'}}>Just take one<br/>meaningful step <span className="font-serif italic text-accent">today.</span></p>
-          <button onClick={function(){setObStep(6);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+          <button onClick={function(){setObStep(6);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>Continue</button>
         </div>}
 
-        {/* Screen 7 — Product */}
+        {/* Screen 7 — Meet the app */}
         {obStep===6&&<div>
           <p className="ob-cinematic font-sans text-[26px] md:text-[34px] text-headline leading-[1.25] mb-6 font-medium">That's what<br/><span className="font-serif italic text-accent">Passion Flow Daily</span> is.</p>
           <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70 mb-2" style={{animationDelay:'0.6s'}}>One meaningful idea.</p>
           <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70 mb-2" style={{animationDelay:'0.85s'}}>Every part of your life.</p>
-          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70 mb-2" style={{animationDelay:'1.1s'}}>One wheel at a time.</p>
-          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70" style={{animationDelay:'1.35s'}}>Everyday.</p>
-          <button onClick={function(){setObStep(7);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>continue</button>
+          <p className="ob-cinematic font-serif text-[18px] md:text-[22px] text-body italic opacity-70" style={{animationDelay:'1.1s'}}>One wheel at a time.</p>
+          <button onClick={function(){setObStep(7);}} className="ob-cinematic font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full mt-10 active:scale-[0.97]" style={{animationDelay:'1.8s',background:'#C49A7A'}}>Continue</button>
         </div>}
 
         {/* Screen 8 — How It Works (3 cards with visuals) */}
         {obStep===7&&<div>
-          <p className="ob-fade-up font-serif text-[22px] md:text-[26px] text-headline italic mb-6">how it works</p>
+          <p className="ob-fade-up font-serif text-[22px] md:text-[26px] text-headline italic mb-6">How it works</p>
 
           <div className="space-y-3 text-left max-w-[340px] mx-auto mb-6">
             {/* Card 1 */}
@@ -7981,8 +8075,8 @@ function App(){
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="font-sans text-[13px] text-headline font-semibold">Pick a life area.</p>
-                <p className="font-sans text-[11px] text-body opacity-50">Choose Create, Mindset, Connect, Move, or Reset.</p>
+                <p className="font-sans text-[13px] text-headline font-semibold">Pick a life area</p>
+                <p className="font-sans text-[11px] text-headline leading-snug">Choose Create, Mindset, Connect,<br/>Move or Reset.</p>
               </div>
             </div>
 
@@ -7993,8 +8087,8 @@ function App(){
                 <span className="text-[20px]">{'\u2728'}</span>
               </div>
               <div className="flex-1">
-                <p className="font-sans text-[13px] text-headline font-semibold">Discover one idea.</p>
-                <p className="font-sans text-[11px] text-body opacity-50">We suggest something meaningful just for you.</p>
+                <p className="font-sans text-[13px] text-headline font-semibold">Discover one idea</p>
+                <p className="font-sans text-[11px] text-headline leading-snug">Explore ideas that spark your interest<br/>or let us pick for you.</p>
               </div>
             </div>
 
@@ -8007,8 +8101,8 @@ function App(){
                 <div className="w-[16px] h-[2px] rounded-full" style={{background:'#C49A7A',opacity:0.2}}/>
               </div>
               <div className="flex-1">
-                <p className="font-sans text-[13px] text-headline font-semibold">Live it.</p>
-                <p className="font-sans text-[11px] text-body opacity-50">Complete it, reflect, and build your Flow.</p>
+                <p className="font-sans text-[13px] text-headline font-semibold">Live it</p>
+                <p className="font-sans text-[11px] text-headline leading-snug">Make it part of your day. Complete it, reflect, and build your flow.</p>
               </div>
             </div>
           </div>
@@ -8019,8 +8113,8 @@ function App(){
         {/* Screen 9 — Demo Video */}
         {obStep===8&&<div className="text-center">
           <div className="mb-4">
-            <p className="ob-cinematic font-sans text-[22px] md:text-[26px] text-headline font-medium mb-1">Become someone<br/>who lives <span className="font-serif italic text-accent">fully.</span></p>
-            <p className="ob-cinematic font-serif text-[13px] text-body opacity-55 italic mb-0.5" style={{animationDelay:'0.3s'}}>Start your day with one meaningful idea.</p>
+            <p className="ob-cinematic font-sans text-[22px] md:text-[26px] text-headline font-medium mb-1 leading-snug">Make time for<br/>every side of <span className="font-serif italic text-accent">you.</span></p>
+            <p className="ob-cinematic font-sans text-[13px] text-body opacity-55 mb-0.5" style={{animationDelay:'0.3s'}}>Start your day with one meaningful idea.</p>
             <p className="ob-cinematic font-serif text-[13px] text-body opacity-55 italic" style={{animationDelay:'0.5s'}}>Spin. Choose. Go.</p>
           </div>
           <div style={{marginBottom:16,display:'flex',justifyContent:'center'}}>
@@ -8039,17 +8133,25 @@ function App(){
                   autoPlay
                   preload="auto"
                   onEnded={function(){
+                    setDemoProgress(100);
                     setDemoDone(true);
                     var v=onboardingDemoVideoRef.current;
                     if(v){v.loop=true;var p=v.play();if(p&&typeof p.catch==='function')p.catch(function(){});}
                   }}
-                  onError={function(){setDemoDone(true);}}
+                  onError={function(){setDemoProgress(100);setDemoDone(true);}}
                   style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',display:'block',background:'#FAF6F2'}}
                 />
               </div>
             </div>
           </div>
-          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else{setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'continue':'watch the demo…'}</button>
+          <div className="w-full max-w-[220px] mx-auto mb-3">
+            <div className="h-[8px] rounded-full overflow-hidden" style={{background:'rgba(46,28,22,0.10)',boxShadow:'inset 0 1px 2px rgba(46,28,22,0.06)'}}>
+              <div className="h-full rounded-full" style={{width:Math.min(100,demoProgress)+'%',background:'linear-gradient(90deg, #E890A8 0%, #C49A7A 52%, #7CC898 100%)',boxShadow:demoProgress>2?'0 0 10px rgba(196,154,122,0.45)':'none',transition:'width 0.12s linear'}}/>
+            </div>
+            <p className="font-sans text-[11px] text-headline mt-2">{demoDone?'Ready to continue':'Watching the demo'}</p>
+          </div>
+          <button onClick={function(){if(demoDone){if(!currentUser){setShowAuth(true);setAuthMode('signup');}else{setObStep(9);setObSub(0);setPersonalizationProfile(createEmptyPersonalizationProfile());}}}} disabled={!demoDone} className="ob-fade-up font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full transition-all" style={{background:'#C49A7A',marginTop:4,opacity:demoDone?1:0.4,cursor:demoDone?'pointer':'default',transform:demoDone?'scale(1)':'scale(0.98)'}}>{demoDone?'Continue':'Watch the demo…'}</button>
+          {demoDone&&<button type="button" onClick={function(){var v=onboardingDemoVideoRef.current;if(!v)return;try{v.loop=true;v.currentTime=0;}catch(e){}var p=v.play();if(p&&typeof p.catch==='function')p.catch(function(){});}} className="block mx-auto mt-3 font-sans text-[12px] text-headline">Rewatch</button>}
         </div>}
 
         {/* Screen 10 — Personalization Layer 1 (3 screens) */}
@@ -8060,18 +8162,17 @@ function App(){
             <div className="flex flex-col gap-2 w-full max-w-[340px] mx-auto mb-6">
               {OVERALL_GOAL_OPTIONS.map(function(opt){var sel=(personalizationProfile.overallGoals||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleOverallGoal(opt.id);}} className="w-full font-sans text-[13px] px-4 py-2.5 rounded-full border transition-all active:scale-[0.98]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#2E1C16'}}>{opt.label}</button>;})}
             </div>
-            <button onClick={function(){setObSub(1);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
-            <button onClick={function(){setObSub(1);}} className="block mx-auto mt-3 font-sans text-[13px] text-headline">Skip for now</button>
+            <button onClick={function(){if((personalizationProfile.overallGoals||[]).length)setObSub(1);}} disabled={!(personalizationProfile.overallGoals||[]).length} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)',opacity:(personalizationProfile.overallGoals||[]).length?1:0.4}}>{(personalizationProfile.overallGoals||[]).length?'Continue':'Pick at least one'}</button>
           </div>}
 
           {obSub===1&&<div className="ob-fade-up">
-            <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2">What's been getting in the way of enjoying your days?</p>
+            <p className="font-serif text-[22px] md:text-[26px] text-headline italic mb-2 leading-snug">What's been getting in the way<br/>of enjoying your days?</p>
             <p className="font-sans text-[15px] text-headline mb-5 max-w-[320px] mx-auto">Pick up to 2</p>
             <div className="flex flex-wrap justify-center gap-2 max-w-[340px] mx-auto mb-6">
               {CORE_FRICTION_OPTIONS.map(function(opt){var sel=(personalizationProfile.coreFrictions||[]).indexOf(opt.id)>=0;return <button key={opt.id} onClick={function(){toggleProfileArray('coreFrictions',opt.id,2);}} className="font-sans text-[13px] px-3 py-2 rounded-full border transition-all active:scale-[0.95]" style={{background:sel?'rgba(196,154,122,0.15)':'white',borderColor:sel?'#C49A7A':'rgba(0,0,0,0.08)',color:sel?'#C49A7A':'#2E1C16'}}>{opt.label}</button>;})}
             </div>
-            <button onClick={function(){setObSub(2);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
-            <button onClick={function(){setObSub(2);}} className="block mx-auto mt-3 font-sans text-[13px] text-headline">Skip for now</button>
+            <button onClick={function(){if((personalizationProfile.coreFrictions||[]).length)setObSub(2);}} disabled={!(personalizationProfile.coreFrictions||[]).length} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)',opacity:(personalizationProfile.coreFrictions||[]).length?1:0.4}}>{(personalizationProfile.coreFrictions||[]).length?'Continue':'Pick at least one'}</button>
+            <button onClick={function(){setObSub(0);}} className="block mx-auto mt-3 font-sans text-[13px] text-headline">Back</button>
           </div>}
 
           {obSub===2&&<div className="ob-fade-up">
@@ -8079,7 +8180,7 @@ function App(){
             <p className="font-sans text-[15px] font-medium text-headline mb-5 max-w-[340px] mx-auto leading-relaxed">Optional. Bandwidth and time matter most</p>
             <div className="mb-6">{renderEverydayLifeFields(personalizationProfile,false)}</div>
             <button onClick={function(){goToOnboardingNotifOrFinish(false);}} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Save & continue</button>
-            <button onClick={function(){goToOnboardingNotifOrFinish(true);}} className="block mx-auto mt-2 font-sans text-[13px] text-headline">Skip for now</button>
+            <button onClick={function(){setObSub(1);}} className="block mx-auto mt-2 font-sans text-[13px] text-headline">Back</button>
           </div>}
 
           {obSub===3&&<div className="ob-fade-up">
@@ -8098,6 +8199,7 @@ function App(){
             <p className="font-sans text-[12px] text-body opacity-45 mb-6">You can change this anytime in Settings.</p>
             <button onClick={handleOnboardingNotifAllow} className="font-sans text-[13px] font-semibold text-white px-8 py-3 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Remind me daily</button>
             <button onClick={handleOnboardingNotifSkip} className="block mx-auto mt-3 font-sans text-[13px] text-headline">Not now</button>
+            <button onClick={function(){setObSub(2);}} className="block mx-auto mt-2 font-sans text-[13px] text-headline">Back</button>
           </div>}
 
           {obSub<3&&<div className="flex justify-center gap-2 mt-8">
@@ -8153,14 +8255,16 @@ function App(){
         </div>}
 
       </div>
+      </div>
 
       {/* Skip */}
       {obStep<9&&<button onClick={function(){try{localStorage.setItem('pfd_onboarded','1');}catch(e){}showOnboardRef.current=false;setShowOnboard(false);setShowAuth(true);setAuthMode('signup');}} className="fixed top-14 right-4 z-[200] font-sans text-[11px] text-body opacity-30 hover:opacity-60 px-3 py-2">skip</button>}
     </div>}
 
     {/* Paywall */}
-    {showPaywall&&<div className="fixed inset-0 z-[90] overflow-y-auto" style={{background:'linear-gradient(160deg, #F8EAEA 0%, #FAF6F2 50%, #F5DDDE 100%)'}}>
-      <div className="min-h-screen flex flex-col items-center justify-start px-6 pb-10" style={{paddingTop:'max(5rem, calc(env(safe-area-inset-top) + 1.5rem))'}}>
+    {showPaywall&&<div className="z-[90] overflow-y-auto" style={{position:'fixed',top:0,right:0,bottom:0,left:0,width:'100%',height:'100dvh',background:shareDayCardGradient()}}>
+      <div className="ob-wash-drift" aria-hidden="true"/>
+      <div className="relative z-[1] min-h-[100dvh] flex flex-col items-center justify-start px-6 pb-10" style={{paddingTop:'max(5rem, calc(env(safe-area-inset-top) + 1.5rem))'}}>
         <div className="max-w-[440px] w-full text-center ob-fade-up">
 
           {/* Header */}
@@ -8386,7 +8490,7 @@ function App(){
       </div>
     </div>}
 
-    {showAuth&&<div className="fixed inset-0 z-[95] flex flex-col items-center justify-center px-6 overflow-y-auto py-10" style={{background:'linear-gradient(160deg, #F8EAEA 0%, #FAF6F2 50%, #F5DDDE 100%)'}}>
+    {showAuth&&<div className="fixed inset-0 z-[95] flex flex-col items-center justify-center px-6 overflow-y-auto py-10" style={{background:shareDayCardGradient()}}>
       <div className="w-full max-w-sm fade-in">
         <button onClick={handleAuthBack} className="flex items-center gap-1.5 font-sans text-[13px] text-body opacity-50 hover:opacity-80 transition-opacity mb-8 active:scale-[0.97]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -8442,7 +8546,7 @@ function App(){
       No internet connection. Some features may be unavailable.
     </div>}
     {!showOnboard&&!showPaywall&&!showAuth&&currentUser&&isPro&&renderMobile()}
-    {!showOnboard&&!showPaywall&&!showAuth&&currentUser&&isPro&&!openCard&&!pickForMeResult&&!planMyDayResult&&!showDeepPersonalization&&!showProfilePrompt&&!showNotifPrePrompt&&!showCloseConfirm&&!shareLog&&!showOverlay&&!showReviewPrompt&&renderMobileTabBar()}
+    {!showOnboard&&!showPaywall&&!showAuth&&currentUser&&isPro&&!openCard&&!pickForMeResult&&!planMyDayResult&&!showDeepPersonalization&&!showPersonalizationPayoff&&!showProfilePrompt&&!showNotifPrePrompt&&!showCloseConfirm&&!shareLog&&!showOverlay&&!showReviewPrompt&&renderMobileTabBar()}
     {!showOnboard&&!showPaywall&&!showAuth&&currentUser&&isPro&&renderDesktop()}
 
     {/* Existing user — one-time personalization prompt */}
@@ -8469,23 +8573,25 @@ function App(){
     {/* Personalization payoff — first completion preview */}
     {showPersonalizationPayoff&&payoffPreviewPlan&&(function(){
       var copy=buildDeepPayoffCopy(personalizationProfile);
-      return <div className="fixed inset-0 z-[205] flex items-end sm:items-center justify-center px-4 pb-5 sm:pb-0" style={{background:'rgba(46,28,22,0.42)',backdropFilter:'blur(6px)'}}>
-        <div className="w-full max-w-[400px] rounded-[28px] px-5 pt-5 pb-5 sheet-up flex flex-col overflow-hidden" style={{background:'#FAF6F2',boxShadow:'0 16px 48px rgba(0,0,0,0.2)',maxHeight:'min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 12px))'}} onClick={function(e){e.stopPropagation();}}>
+      var sheet=<div className="fixed inset-0 z-[220] flex items-center justify-center px-3" style={{background:'rgba(46,28,22,0.42)',backdropFilter:'blur(6px)',paddingTop:'max(8px, env(safe-area-inset-top, 0px))',paddingBottom:'max(8px, env(safe-area-inset-bottom, 0px))'}}>
+        <div className="pfd-payoff-sheet ob-payoff-stack w-full max-w-[400px] rounded-[28px] px-5 pt-3 overflow-hidden" style={{background:'#FAF6F2',boxShadow:'0 16px 48px rgba(0,0,0,0.2)'}} onClick={function(e){e.stopPropagation();}}>
           <div className="flex-shrink-0 text-center px-1">
             <p className="text-[20px] mb-0.5">{'\u2728'}</p>
             <p className="font-serif text-[20px] text-headline italic mb-1 leading-snug">{copy.title}</p>
-            <p className="font-sans text-[12px] text-headline mb-3 leading-snug">{copy.subtitle}</p>
+            <p className="font-sans text-[12px] text-headline mb-2 leading-snug">{copy.subtitle}</p>
           </div>
-          <div className="flex-1 min-h-0 flex flex-col gap-2 text-left overflow-y-auto">
+          <div className="ob-payoff-cards text-left">
             {CARDS.map(function(c){
               var item=payoffPreviewPlan[c.id];
               if(!item)return null;
               var shufflesLeft=OB_PAYOFF_SHUFFLES-(payoffPreviewShuffleCount[c.id]||0);
-              return <div key={c.id} className="flex items-center gap-2.5 rounded-[16px] pl-3 pr-2 py-2.5 border overflow-hidden" style={{background:'linear-gradient(160deg, '+c.color+' 0%, rgba(255,255,255,0.96) 78%)',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
+              return <div key={c.id} className="ob-payoff-card flex items-center gap-2.5 rounded-[16px] pl-3 pr-2 py-2 border overflow-hidden" style={{background:'linear-gradient(160deg, '+c.color+' 0%, rgba(255,255,255,0.96) 78%)',borderColor:c.borderColor,boxShadow:'0 0 12px rgba(196,154,122,0.08)'}}>
                 <div className="w-[36px] h-[36px] rounded-[12px] flex items-center justify-center flex-shrink-0 text-[18px]" style={{background:cardPickGradient(c.id),boxShadow:'0 2px 8px rgba(0,0,0,0.12)'}}>{c.emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-sans text-[10px] font-semibold text-body opacity-50 mb-0.5">{c.title}</p>
-                  <p key={item.ideaId||item.title} className="font-sans text-[13px] text-headline leading-snug">{item.title}</p>
+                <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden">
+                  <p className="font-sans text-[10px] font-semibold text-body opacity-50 mb-0.5 flex-shrink-0">{c.title}</p>
+                  <div className="min-h-0 overflow-y-auto" style={{WebkitOverflowScrolling:'touch',overscrollBehavior:'contain',maxHeight:'100%'}}>
+                    <p key={item.ideaId||item.title} className="font-sans text-[13px] text-headline leading-snug">{item.title}</p>
+                  </div>
                 </div>
                 {shufflesLeft>0&&<button type="button" onClick={function(){shufflePayoffPreviewCategory(c.id);}} className="flex-shrink-0 w-[34px] h-[34px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform" style={{background:'rgba(255,255,255,0.78)',border:'1px solid '+c.borderColor,color:'#614433'}} aria-label={'Shuffle '+c.title}>
                   <ShuffleIcon/>
@@ -8493,13 +8599,17 @@ function App(){
               </div>;
             })}
           </div>
-          <div className="flex-shrink-0 text-center pt-3">
+          <div className="flex-shrink-0 text-center pt-2.5 pb-4">
             <p className="font-sans text-[12px] text-headline font-medium leading-snug mb-0.5">{copy.footer}</p>
             <p className="font-sans text-[11px] text-body opacity-50 leading-snug mb-3">{copy.settings}</p>
             <button onClick={dismissPersonalizationPayoff} className="font-sans text-[14px] font-semibold text-white px-8 py-3.5 rounded-full active:scale-[0.97]" style={{background:'#C49A7A',boxShadow:'0 4px 14px rgba(196,154,122,0.3)'}}>Continue</button>
           </div>
         </div>
       </div>;
+      if(typeof document!=='undefined'&&document.body&&ReactDOM.createPortal){
+        return ReactDOM.createPortal(sheet,document.body);
+      }
+      return sheet;
     })()}
 
     {/* Shared card panel overlay (works on both mobile + desktop) */}
